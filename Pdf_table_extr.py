@@ -27,6 +27,13 @@ if (not os.listdir(path)):
     print ("The 'PDFs' directory is empty!")
     sys.exit()
 
+#check if Processed excel file is already exist, if yes show a overwrite warning
+if os.path.isfile("./Processed.xlsx"): 
+    ans = str(input("Warning: Processed.xlsx file in the working directory will be overwritten, would you like to continue? y/n :")).upper()
+if ans == "N" or ans == "NO":
+    print("Terminating the program...")
+    sys.exit()
+
 #open an excel file
 writer = pd.ExcelWriter('./Processed.xlsx', engine='xlsxwriter')
 workbook  = writer.book
