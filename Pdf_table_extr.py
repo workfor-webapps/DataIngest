@@ -99,6 +99,7 @@ for files in os.listdir(path):
 
                 #convert to pandas dataframe
                 df = pd.DataFrame(tables[(i)])
+                df = df.replace("^–","-", regex=True) # this is added so excel can identify negative values 
 
 
                 #drop if all column types are objects
