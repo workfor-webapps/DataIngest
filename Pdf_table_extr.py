@@ -100,16 +100,14 @@ for files in os.listdir(path):
                 #convert to pandas dataframe
                 df = pd.DataFrame(tables[(i)])
                 df = df.replace("^–","-", regex=True) # this is added so excel can identify negative values 
+                df = df.replace("\*{1,4}$"," ",regex=True) # this is added so excel can identify numerical values 
+                df = df.replace("–",np.nan) # this is added so excel can identify NAN values
+                df = df.replace("-",np.nan) # this is added so excel can identify NAN values
 
-
-                #drop if all column types are objects
-                for column in df.columns:
-                    if (df[column].dtypes != 'object') and (df[column].sum() > df[column].isna().sum()):
-                        drop = False
-                        break
-                    else:
-                        drop = True
-                if drop:
+                
+                #drop if all/most column types are objects 
+                numeric_values = len([df[column][i] for column in df.columns for i in range(0, len(df)) if str(df[column][i]).replace(".","").isnumeric()])
+                if (df.count().sum())/3 > numeric_values:
                     i+=1
                     continue
     
@@ -190,7 +188,33 @@ for files in os.listdir(path):
             table_clean[num].columns.str.upper()
         
         # Saving data to an excel sheet
+
+        if jj==1:
+            #adding cell formatting for summary cells
+            sum_format = workbook.add_format({
+                'bold': 1,
+                'border': 2,
+                'align': 'left',
+                'valign': 'vcenter',
+                'fg_color': '#00FFFF'})
+
+            worksheet_name = "Summary"
+            worksheet=workbook.add_worksheet(worksheet_name)
+            writer.sheets[worksheet_name] = worksheet
+            worksheet.write_string(0, 0,"File name", sum_format)
+            worksheet.write_string(0, 1,"Sheet number", sum_format)
+            worksheet.write_string(0, 2,"Number of Clean Tables", sum_format)
+            worksheet.write_string(0, 3,"Title",sum_format )
+        
+        
         worksheet_name = "Pub_{}".format(jj)
+
+        writer.sheets["Summary"].write_string(jj,0, files)
+        writer.sheets["Summary"].write_string(jj,1, worksheet_name)
+        writer.sheets["Summary"].write_string(jj,2, str(len(table_clean)))
+        writer.sheets["Summary"].write_string(jj,2, paper_title)
+
+
         jj += 1
         start_row = 1
         worksheet=workbook.add_worksheet(worksheet_name)
