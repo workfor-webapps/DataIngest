@@ -13,6 +13,9 @@ developed for this specific purpose. In order to run this script please follow t
 2. Creat a directory called PDFs in the current working directory and place all the PDF files in this directory
 3.  After run, an excel file containing table data will be created for post-processing """
 
+#***************************************************************************************
+#***************************** Initializing ********************************************
+
 # get PDF files directory
 path = os.getcwd() + "/PDFs/"
 isExist = os.path.exists(path)
@@ -38,6 +41,9 @@ if ans == "N" or ans == "NO":
 writer = pd.ExcelWriter('./Processed.xlsx', engine='xlsxwriter')
 workbook  = writer.book
 
+#*************************************************************************************
+#********************* Reading all PDF files in PDFs directory ***********************
+
 jj = 1 # this is for sheet names 
 #loop over all pdf files
 for files in os.listdir(path):
@@ -55,12 +61,13 @@ for files in os.listdir(path):
 
         #initialize table-clean
         table_clean = []
-
+        #******************************************************************
+        #******************** Looping over pages for each PDF file ********
         #loop over pages
         for pg in range(0,pages):
-            #************************************************************************************************************************
-            #***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0*********************
-            #************************************************************************************************************************
+            #************************************************************************************************************
+            #***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0********
+            #************************************************************************************************************
 
             #check if the page is rotated - first check/attempt to fix rotated pages
             if (pdf_file.getPage(pg).get('/Rotate') != None and (pdf_file.getPage(pg).get('/Rotate')) != 0):
@@ -100,9 +107,9 @@ for files in os.listdir(path):
                 #convert to pandas dataframe
                 df = pd.DataFrame(tables[(i)])
                 df = df.replace("^–","-", regex=True) # this is added so excel can identify negative values 
-                df = df.replace("\*{1,4}$"," ",regex=True) # this is added so excel can identify numerical values 
-                df = df.replace("–",np.nan) # this is added so excel can identify NAN values
-                df = df.replace("-",np.nan) # this is added so excel can identify NAN values
+                df = df.replace("\*{1,4}$","",regex=True) # this is added so excel can identify numerical values 
+                df = df.replace("–", np.nan) # this is added so excel can identify NAN values
+                df = df.replace("-", np.nan) # this is added so excel can identify NAN values
 
                 
                 #drop if all/most column types are objects 
@@ -131,6 +138,7 @@ for files in os.listdir(path):
 
                     pdf_page = pdf_file.getPage(pg)
                     pdf_page.rotateClockwise(90)  # rotate Clockwise()
+                    if z==1 : pdf_page.scaleBy(0.5)         # scale 
                     pdf_writer.addPage(pdf_page)
 
                     #path to rotated directory- gets created if not there
@@ -212,7 +220,7 @@ for files in os.listdir(path):
         writer.sheets["Summary"].write_string(jj,0, files)
         writer.sheets["Summary"].write_string(jj,1, worksheet_name)
         writer.sheets["Summary"].write_string(jj,2, str(len(table_clean)))
-        writer.sheets["Summary"].write_string(jj,2, paper_title)
+        writer.sheets["Summary"].write_string(jj,3, paper_title)
 
 
         jj += 1
@@ -255,8 +263,3 @@ for files in os.listdir(path):
         pdf_in.close()
 writer.save()
         
-
-
-
-
-
