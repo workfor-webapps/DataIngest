@@ -101,10 +101,12 @@ On Mac or Linux, open your terminal, on Windows, open the Anaconda Prompt termin
 
 ## Running python scripts from the command line
 On Mac or Linux, open your terminal, on Windows, open the Anaconda Prompt terminal app and activate the PDEA environment.
+Create a PDFs directory and copy all the pdf files into this directory. 
+If you are running the script multiple times make sure you save the produced **Processed.xlsx** file
 
 To run the stand alone python scripts that end in .py type:
 ```
-% python ./nameofscript.py
+% python ./Pdf_table_extr.py
 ```
 
 ## Pushing changes to GitHub
