@@ -8,13 +8,11 @@ import shutil
 #import xlsxwriter
 
 """ This is a python script for extraction of Meta_Analysis table data and
-developed for this specific purpose. In order to run this script please follow this steps: 
-1. Creat an environment from the environment.yml file.
-2. Creat a directory called PDFs in the current working directory and place all the PDF files in this directory
-3.  After run, an excel file containing table data will be created for post-processing """
+    developed for this specific purpose. In order to run this script please follow the steps
+    in README.md file  """
 
-#***************************************************************************************
-#***************************** Initializing ********************************************
+#**************************************************************************************
+#***************************** Initializing *******************************************
 
 # get PDF files directory
 path = os.getcwd() + "/PDFs/"
