@@ -5,6 +5,8 @@ import PyPDF2
 import pandas as pd
 import numpy as np
 import shutil
+
+from Google import Create_Service
 #import xlsxwriter
 
 """ This is a python script for extraction of Meta_Analysis table data and
@@ -15,18 +17,21 @@ import shutil
 #***************************** Initializing *******************************************
 
 # get PDF files directory
-path = os.getcwd() + "/PDFs/"
-isExist = os.path.exists(path)
+#path = os.getcwd() + "/PDFs/"
+#isExist = os.path.exists(path)
 
-if (not isExist):
-    os.mkdir(path)
-    print("PDFs directory is created in your CWD, please copy the pdf files to this directory and run the script again")
-    sys.exit()
+#if (not isExist):
+#    os.mkdir(path)
+#    print("PDFs directory is created in your CWD, please copy the pdf files to this directory and run the script again")
+#    sys.exit()
+#adding google drive api to access files from gdrive
+
+
 
 #check if the PDFs directory is empty
-if (not os.listdir(path)):
-    print ("The 'PDFs' directory is empty!")
-    sys.exit()
+#if (not os.listdir(path)):
+#    print ("The 'PDFs' directory is empty!")
+#    sys.exit()
 
 #check if Processed excel file is already exist, if yes show a overwrite warning
 if os.path.isfile("./Processed.xlsx"): 
