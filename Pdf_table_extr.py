@@ -248,8 +248,8 @@ for files in os.listdir(path):
                 'fg_color': '#FFD7D7'})
             
             worksheet.write_string(start_row, 0,"Table: {} ".format(ii+1), Cell_format)
-    
-    
+
+
             if ii==0:
         
                 table_clean[ii].to_excel(writer, sheet_name=worksheet_name, startrow=start_row, startcol=1, index =False)
@@ -260,4 +260,5 @@ for files in os.listdir(path):
             start_row += table_clean[ii].shape[0]
         pdf_in.close()
 writer.save()
-        
+    
+    

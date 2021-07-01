@@ -2,4 +2,6 @@
 .vscode/
 PDFs/*
 Processed.xlsx
+Table_extr.ipynb
+rotated_tables_test.ipynb
 RotatedPages/*
