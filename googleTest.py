@@ -4,6 +4,7 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 import tabula
 import PyPDF2
 import os
+import pandas as pd
 #import xlsxwriter
 
 def google_t():
@@ -51,8 +52,12 @@ def google_t():
     pdf_file = PyPDF2.PdfFileReader(fh)
     pages = pdf_file.numPages
     tables = tabula.read_pdf('temp.pdf', multiple_tables=True, pages='all')
-    print(pages)
+    #print(pages)
+    df = pd.DataFrame(tables[1])
+    html = df.to_html()
+    return html
 
-    print(tables[1])
+
+    #print(tables[1])
 if __name__ == '__main__':
     google_t()
