@@ -1,4 +1,9 @@
 from Google import Create_Service, list_files
+import io
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+import tabula
+import PyPDF2
+import os
 #import xlsxwriter
 
 def google_t():
@@ -27,5 +32,27 @@ def google_t():
     results = service.files().list(q = "'" + id + "' in parents", pageSize=10, fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime)").execute()
     items = results.get('files', [])
 
-    list_files(items) 
-    return 0
+    #list_files(items) 
+    file_id = '1UIaDlkEZBvH83i3VUs8CjjknPC8GYgGU'
+    request = service.files().get_media(fileId=file_id)
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+        print ("Download: %", int(status.progress() * 100))
+
+    fh.seek(0)
+
+    with open('temp.pdf', 'wb') as f:
+        f.write(fh.read())
+
+    #3url = 'https://drive.google.com/file/d/1UIaDlkEZBvH83i3VUs8CjjknPC8GYgGU/view?usp=sharing'
+    pdf_file = PyPDF2.PdfFileReader(fh)
+    pages = pdf_file.numPages
+    tables = tabula.read_pdf('temp.pdf', multiple_tables=True, pages='all')
+    print(pages)
+
+    print(tables[1])
+if __name__ == '__main__':
+    google_t()
