@@ -1,4 +1,3 @@
-import datetime
 from googleTest import google_t
 #from google.cloud import datastore
 from flask import Flask, render_template, request, redirect
@@ -19,9 +18,9 @@ def index():
 @app.route('/PullTables/')
 def PullTable():
     html_file = google_t()
-    text_file = open("./templates/indexT.html", "w")
-    text_file.write(html_file)
-    text_file.close()
+    #text_file = open("./templates/indexT.html", "w")
+    #text_file.write(html_file)
+    #text_file.close()
     return render_template('indexT.html')
 
 
