@@ -26,4 +26,4 @@ id = folderIdResult[0].get('id')
 results = service.files().list(q = "'" + id + "' in parents", pageSize=10, fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime)").execute()
 items = results.get('files', [])
 
-list_files(items)
+list_files(items) 
