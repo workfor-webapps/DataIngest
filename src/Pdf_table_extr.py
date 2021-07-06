@@ -263,11 +263,7 @@ isExist = os.path.exists(path)
 
 if (not isExist):
     os.mkdir(path)
-    print("temp directory is created in your CWD, please copy the pdf files to this directory and run the script again")
-    sys.exit()
 #adding google drive api to access files from gdrive
-
-
 
 #check if the PDFs directory is empty
 if (not os.listdir(path)):
@@ -276,16 +272,15 @@ if (not os.listdir(path)):
 
 writer = excel_init()
 
-#*************************************************************************************
-#********************* Reading all PDF files in PDFs directory ***********************
 
-jj = 1 # this is for sheet names 
-#loop over all pdf files
-for files in os.listdir(path):
-    
-    if files.endswith(".pdf"):
-        file_p = path+files
-        paper_title = get_title(file_p)
-        table_clean = extract_tables(file_p)
-        write_to_excel(writer, jj, paper_title, table_clean)
-        jj += 1
+
+jj = 1 # this is for sheet names in excel writer
+temp_file = path+"temp.pdf"
+
+
+time_modified = os.path.getmtime(temp_file)
+
+paper_title = get_title(temp_file)
+table_clean = extract_tables(temp_file)
+write_to_excel(writer, jj, paper_title, table_clean)
+jj += 1
