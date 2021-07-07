@@ -1,7 +1,6 @@
 import pickle
 import os
 import io
-from tabulate import tabulate
 from google_auth_oauthlib.flow import Flow, InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
@@ -44,59 +43,6 @@ def Create_Service(client_secret_file, api_name, api_version, *scopes):
         print('Unable to connect.')
         print(e)
         return None
-
-def convert_to_RFC_datetime(year=1900, month=1, day=1, hour=0, minute=0):
-    dt = datetime.datetime(year, month, day, hour, minute, 0).isoformat() + 'Z'
-    return dt
-
-def list_files(items):
-    """given items returned by Google Drive API, prints them in a tabular way"""
-    if not items:
-        # empty drive
-        print('No files found.')
-    else:
-        rows = []
-        for item in items:
-            # get the File ID
-            id = item["id"]
-            # get the name of file
-            name = item["name"]
-            try:
-                # parent directory ID
-                parents = item["parents"]
-            except:
-                # has no parrents
-                parents = "N/A"
-            try:
-                # get the size in nice bytes format (KB, MB, etc.)
-                size = get_size_format(int(item["size"]))
-            except:
-                # not a file, may be a folder
-                size = "N/A"
-            # get the Google Drive type of file
-            mime_type = item["mimeType"]
-            # get last modified date time
-            modified_time = item["modifiedTime"]
-            # append everything to the list
-            rows.append((id, name, parents, size, mime_type, modified_time))
-        print("Files:")
-        # convert to a human readable table
-        table = tabulate(rows, headers=["ID", "Name", "Parents", "Size", "Type", "Modified Time"])
-        # print the table
-        print(table)
-
-def get_size_format(b, factor=1024, suffix="B"):
-    """
-    Scale bytes to its proper byte format
-    e.g:
-        1253656 => '1.20MB'
-        1253656678 => '1.17GB'
-    """
-    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
-        if b < factor:
-            return f"{b:.2f}{unit}{suffix}"
-        b /= factor
-    return f"{b:.2f}Y{suffix}"
 
 def upload_files(service):
     """
