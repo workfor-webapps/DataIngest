@@ -258,7 +258,7 @@ def write_to_excel(writer, jj, paper_title, table_clean):
 #***************************** Initializing *******************************************
 if __name__ == '__main__':
     # get PDF files directory
-    path = os.getcwd() + "/temp/"
+    path = os.getcwd() + "/src/temp/"
     isExist = os.path.exists(path)
 
     if (not isExist):
