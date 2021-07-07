@@ -1,5 +1,5 @@
 from src.drive_functions import Create_Service, get_files, get_temp_pdf
-from src.Pdf_table_extr import extract_tables
+from src.Pdf_table_extr import extract_tables, get_title
 #from google.cloud import datastore
 from flask import Flask, render_template, request, redirect
 from flask.wrappers import Request
@@ -30,13 +30,20 @@ def PullTable():
     get_temp_pdf(service, file_id)
     #path = os.getcwd() + "/src/temp/"
     temp_file = "temp.pdf"
+    paper_title = get_title(temp_file)
     table_clean = extract_tables(temp_file)
     df = table_clean[0]
+   
+    #-----------------Get json for table-------------
     data = df.to_json(orient='table')
-
+    #------------------------------------------------
+    
     html_file = df.to_html()
     text_file = open("./templates/indexT.html", "w")
+    header = "{% extends 'base.html' %}\n{% block head %}\n<h2>Table 1</h2>\n{% endblock %}\n<br>\n{% block body %}\n"
+    text_file.write(header)
     text_file.write(html_file)
+    text_file.write("{% endblock %}")
     text_file.close()
     return render_template('indexT.html')
     #return 0#render_template('index.html')
