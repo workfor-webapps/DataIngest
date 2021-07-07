@@ -202,7 +202,7 @@ def write_to_excel(writer, jj, paper_title, table_clean):
 
     worksheet_name = "Pub_{}".format(jj)
 
-    writer.sheets["Summary"].write_string(jj,0, files)
+    writer.sheets["Summary"].write_string(jj,0, "_name")
     writer.sheets["Summary"].write_string(jj,1, worksheet_name)
     writer.sheets["Summary"].write_string(jj,2, str(len(table_clean)))
     writer.sheets["Summary"].write_string(jj,3, paper_title)
@@ -245,8 +245,8 @@ def write_to_excel(writer, jj, paper_title, table_clean):
         
         #worksheet.column_dimensions['B'].width = 40
         start_row += table_clean[ii].shape[0]
-        writer.save()
-        return 0
+    writer.save()
+    return 0
 
 #********************************************************************************************
 
@@ -258,7 +258,7 @@ def write_to_excel(writer, jj, paper_title, table_clean):
 #***************************** Initializing *******************************************
 if __name__ == '__main__':
     # get PDF files directory
-    path = os.getcwd() + "/src/temp/"
+    path = os.getcwd() + "/temp/"
     isExist = os.path.exists(path)
 
     if (not isExist):
