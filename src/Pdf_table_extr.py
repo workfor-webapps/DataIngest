@@ -65,7 +65,7 @@ def extract_tables(path_files):
             isExist = os.path.exists(path)
             if (not isExist): 
                 os.mkdir(path_rot)
-            file_ext = 'Rot_{}_P_{}.pdf'.format(files.replace(".pdf",""),str(pg))
+            file_ext = 'Rot_{}_P_{}.pdf'.format("temp",str(pg))
             with open(file_ext, 'wb') as pdf_page_rotated:
                 pdf_writer.write(pdf_page_rotated)
             tables = tabula.read_pdf(file_ext, multiple_tables=True, pages="1") # finding tables using tabula    
@@ -129,7 +129,7 @@ def extract_tables(path_files):
                 isExist = os.path.exists(path)
                 if (not isExist): 
                     os.mkdir(path_rot)
-                file_ext = 'Rot_{}_P_{}.pdf'.format(files.replace(".pdf",""),str(pg))
+                file_ext = 'Rot_{}_P_{}.pdf'.format("temp",str(pg))
                 with open(file_ext, 'wb') as pdf_page_rotated:
                     pdf_writer.write(pdf_page_rotated)
                 tables = tabula.read_pdf(file_ext, multiple_tables=True, pages="1") # finding tables using tabula  
@@ -256,31 +256,28 @@ def write_to_excel(writer, jj, paper_title, table_clean):
 
 #**************************************************************************************
 #***************************** Initializing *******************************************
+if __name__ == '__main__':
+    # get PDF files directory
+    path = os.getcwd() + "/temp/"
+    isExist = os.path.exists(path)
 
-# get PDF files directory
-path = os.getcwd() + "/temp/"
-isExist = os.path.exists(path)
+    if (not isExist):
+        os.mkdir(path)
+    #adding google drive api to access files from gdrive
 
-if (not isExist):
-    os.mkdir(path)
-#adding google drive api to access files from gdrive
+    #check if the PDFs directory is empty
+    if (not os.listdir(path)):
+        print ("No file to process!")
+        sys.exit()
 
-#check if the PDFs directory is empty
-if (not os.listdir(path)):
-    print ("No file to process!")
-    sys.exit()
+    writer = excel_init()
 
-writer = excel_init()
+    jj = 1 # this is for sheet names in excel writer
+    temp_file = path+"temp.pdf"
 
+    time_modified = os.path.getmtime(temp_file)
 
-
-jj = 1 # this is for sheet names in excel writer
-temp_file = path+"temp.pdf"
-
-
-time_modified = os.path.getmtime(temp_file)
-
-paper_title = get_title(temp_file)
-table_clean = extract_tables(temp_file)
-write_to_excel(writer, jj, paper_title, table_clean)
-jj += 1
+    paper_title = get_title(temp_file)
+    table_clean = extract_tables(temp_file)
+    write_to_excel(writer, jj, paper_title, table_clean)
+    jj += 1
