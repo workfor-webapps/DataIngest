@@ -29,7 +29,7 @@ def PullTable():
     file_id = file1["id"]
     get_temp_pdf(service, file_id)
     #path = os.getcwd() + "/temp/"
-    temp_file = "/tmp/temp.pdf"
+    temp_file = "temp.pdf"
     paper_title = get_title(temp_file)
     table_clean = extract_tables(temp_file)
     df = table_clean[0]
