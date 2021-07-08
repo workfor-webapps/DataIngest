@@ -28,8 +28,8 @@ def PullTable():
     file1 = files[0]
     file_id = file1["id"]
     get_temp_pdf(service, file_id)
-    path = os.getcwd() + "/src/temp/"
-    temp_file = "temp.pdf"
+    #path = os.getcwd() + "/temp/"
+    temp_file = "/tmp/temp.pdf"
     paper_title = get_title(temp_file)
     table_clean = extract_tables(temp_file)
     df = table_clean[0]
@@ -40,11 +40,11 @@ def PullTable():
     
     html_file = df.to_html(index=False, justify="center" )
     text_file = open("./templates/indexT.html", "w")
-    header = "{% extends 'base.html' %}\n{% block head %}\n<h2>Table 1</h2>\n{% endblock %}\n<br>\n{% block body %}\n<img src='capture.png' >\n"
+    header = "{% extends 'base.html' %}\n{% block head %}\n<h2>Table 1</h2>\n{% endblock %}\n<br>\n{% block body %}\n<img src='../static/capture.png' >\n"
     text_file.write(header)
     text_file.write(html_file)
     text_file.write("{% endblock %}")
-    text_file.close()
+    text_file.close() 
     #paths = os.getcwd() + "/src/temp/Capture.PNG"
     return render_template('indexT.html')
     
