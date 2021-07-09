@@ -6,3 +6,8 @@
 th {
     color: white;
 }
+
+.btn.btn-out-dashed {
+    outline: 2px dashed #000;
+    /*outline-offset: -5px*/
+}

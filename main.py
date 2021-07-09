@@ -15,7 +15,7 @@ def index():
     return render_template('index.html')
     
 
-@app.route('/PullTables/')
+@app.route('/PullTables/')  #  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names
 def PullTable():
     CLIENT_SECRET_FILE = 'client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json'
     API_NAME = 'drive'
@@ -49,7 +49,22 @@ def PullTable():
     return render_template('indexT.html')
     
 
+@app.route('/post_json', methods = ['POST'])
+def post_json():
+    if request.method == 'POST':
+        table = request.get_json()
+        print(type(table))
+        import csv
 
+        with open('table.csv', 'w') as f:
+            w = csv.DictWriter(f, table[0].keys())
+            w.writeheader()
+            for line in table:
+                w.writerow(line)
+
+        print(table)  # parse as JSON
+        print('clicked')
+        return 'Sucesss', 200
 
 
 
