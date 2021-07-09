@@ -78,22 +78,28 @@ def extract_tables(path_files):
         j = len(tables)
         z = 0 # This is in case the numeric columns cannot be fixed by rotation
         while i < j:
-            if (tables[i].shape[1]<2) or (tables[i].shape[0]<2): #drop based on the shape - if smaler than 2 in row or column
+
+            #convert to pandas dataframe
+            df = pd.DataFrame(tables[(i)])
+
+            if (df.shape[1]<2) or (df.shape[0]<2): #drop based on the shape - if smaler than 2 in row or column
                 i+=1
                 continue
-            if tables[i].isna().sum().sum() > tables[i].count().sum(): #drop if number of NAN elements are higher than others
+            if df.isna().sum().sum() > df.count().sum(): #drop if number of NAN elements are higher than others
                 i+=1
                 continue
             
 
 
-            #convert to pandas dataframe
-            df = pd.DataFrame(tables[(i)])
-            df = df.replace("^–","-", regex=True) # this is added so excel can identify negative values 
-            df = df.replace("\*{1,4}$","",regex=True) # this is added so excel can identify numerical values 
-            df = df.replace("–", np.nan) # this is added so excel can identify NAN values
-            df = df.replace("-", np.nan) # this is added so excel can identify NAN values
-
+            hyphen = [r'^\u002D', r'^\u05BE', r'^\u1806', r'^\u2010', r'^\u2011', r'^\u2012', r'^\u2013', r'^\u2014', r'^\uFE58', r'^\uFE63', r'^\uFF0D']
+            #df = df.replace('^–','-', regex=True) # this is added so excel can identify negative values 
+            df = df.replace('^0,','0.', regex=True) # this is added so excel can identify negative values
+            df = df.replace('^\.','0.', regex=True)
+            df = df.replace(',','', regex=True) # this is added so excel can identify negative values
+            df = df.replace('\*{1,4}$','',regex=True) # this is added so excel can identify numerical values 
+            df = df.replace('–', np.nan) # this is added so excel can identify NAN values
+            df = df.replace('-', np.nan) # this is added so excel can identify NAN values
+            df = df.replace(regex=hyphen, value="-")
             
             #drop if all/most column types are objects 
             numeric_values = len([df[column][i] for column in df.columns for i in range(0, len(df)) if str(df[column][i]).replace(".","").isnumeric()])
@@ -105,17 +111,17 @@ def extract_tables(path_files):
             df = df.dropna(axis=1, how='all')
 
             nn = 1
-            mm = tables[i].columns.size
-            for column in tables[i].columns:
+            mm = df.columns.size
+            for column in df.columns:
                 if ("Unnamed"  in column):
                     nn+=1
             if nn>mm/2:
-                tables[i] = tables[i].rename(columns=tables[i].iloc[0,0:])
-                tables[i] = tables[i].drop([0])
+                df = df.rename(columns=df.iloc[0,0:])
+                df = df.drop([0])
         
 
             #Second check if a page is rotated- if columns are numeric it is possibly rotated
-            x = [column for column in tables[i].columns if str(column).replace(".","").isnumeric()] #list of numerical columns
+            x = [column for column in df.columns if str(column).replace(".","").isnumeric()] #list of numerical columns
             if len(x) > 1 and z < 3:
                 pdf_writer = PyPDF2.PdfFileWriter()
 
@@ -149,14 +155,14 @@ def extract_tables(path_files):
     #fixing column names 
     for num in range(len(table_clean)):
         rows_with_nan=[]
-        i = 1
-        j = table_clean[num].columns.size
-        for column in table_clean[num].columns:
-            if ("Unnamed"  in column):
-                i+=1
-        if i>j/2:
-            table_clean[num] = table_clean[num].rename(columns=table_clean[num].iloc[0,0:])
-            table_clean[num] = table_clean[num].drop([0])
+        #i = 1
+        #j = table_clean[num].columns.size
+        #for column in table_clean[num].columns:
+        #    if ("Unnamed" in column):
+        #        i+=1
+        #if i>j/2:
+        #    table_clean[num] = table_clean[num].rename(columns=table_clean[num].iloc[0,0:])
+        #    table_clean[num] = table_clean[num].drop([0])
         
         #re-indexing
         table_clean[num].index = range(len(table_clean[num]))   
@@ -177,6 +183,15 @@ def extract_tables(path_files):
             table_clean[num] = table_clean[num].drop(columns = [str(table_clean[num].columns[1])])
 
         table_clean[num].columns.str.upper()
+        for ind in table_clean[num].index:
+            for col in table_clean[num].columns:
+                try:
+                    temp = table_clean[num][col].iloc[ind]
+                    table_clean[num][col].iloc[ind] = float(temp)
+                    
+                except:
+                    print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
+
     return table_clean
 
 def write_to_excel(writer, jj, paper_title, table_clean):
@@ -244,7 +259,7 @@ def write_to_excel(writer, jj, paper_title, table_clean):
             table_clean[ii].to_excel(writer, sheet_name=worksheet_name, startrow=start_row, startcol=1, index = False)
         
         #worksheet.column_dimensions['B'].width = 40
-        start_row += table_clean[ii].shape[0]
+        start_row += table_clean[ii].shape[0]+1
     writer.save()
     return 0
 
