@@ -17,7 +17,7 @@ def index():
 
 @app.route('/PullTables')  #  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names
 def PullTable():
-    """CLIENT_SECRET_FILE = 'client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json'
+    CLIENT_SECRET_FILE = 'client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json'
     API_NAME = 'drive'
     API_VERSION = 'v3'
     
@@ -31,21 +31,21 @@ def PullTable():
      #path = os.getcwd() + "/temp/"
     temp_file = "temp.pdf"
     paper_title = get_title(temp_file)
-    table_clean = extract_tables(temp_file)
-    df = table_clean[0]
+    #table_clean = extract_tables(temp_file)
+    #df = table_clean[0]
 #
 #     #-----------------Get json for table-------------
-    data = df.to_json(orient='table')
+    #data = df.to_json(orient='table')
 #     #------------------------------------------------
 #
-    html_file = df.to_html(index=False, justify="center", na_rep="", classes="table table-dark table-striped table-hover", table_id="pdf")
-    text_file = open("./templates/table_test.html", "w")
-    header = '<!DOCTYPE html>\n<html lang="en">\n'
-    text_file.write(header)
-    text_file.write(html_file)
-    text_file.close()"""
+    #html_file = df.to_html(index=False, justify="left", na_rep="", classes="table table-light table-striped table-hover", table_id="pdf")
+    #text_file = open("./templates/table_temp.html", "w")
+    #header = '<!DOCTYPE html>\n<html lang="en">\n'
+    #text_file.write(header)
+    #text_file.write(html_file)
+    #text_file.close()'''
     #paths = os.getcwd() + "/src/temp/Capture.PNG"
-    return render_template('indexT.html', title="paper_title")
+    return render_template('indexT.html', title=paper_title)
 
 @app.route('/list_pdfs')
 def list():
@@ -67,17 +67,27 @@ def post_json():
     if request.method == 'POST':
         table = request.get_json()
         print(type(table))
-        import csv
-
-        with open('table.csv', 'w') as f:
-            w = csv.DictWriter(f, table[0].keys())
-            w.writeheader()
-            for line in table:
-                w.writerow(line)
+        
+        import pandas as pd
+        df = pd.DataFrame(table)
+        df.drop(df.columns[len(df.columns)-1], axis=1, inplace=True)
+        #import csv
+        df.to_excel("table.xlsx" , index=False)
+        #with open('table.json', 'w') as f:
+        #    w = csv.DictWriter(f, table[0].keys())
+        #    w.writeheader()
+        #    for line in table:
+        #        w.writerow(line)
 
         print(table)  # parse as JSON
         print('clicked')
         return 'Sucesss', 200
+
+@app.route('/ignore_json')
+def ignore_json():
+    
+    return 'Sucesss', 200
+
 
 @app.route('/showPDF')
 def showPDF():

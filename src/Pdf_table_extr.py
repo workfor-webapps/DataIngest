@@ -191,7 +191,8 @@ def extract_tables(path_files):
                     
                 except:
                     print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
-
+        table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+    
     return table_clean
 
 def write_to_excel(writer, jj, paper_title, table_clean):

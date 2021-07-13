@@ -4,11 +4,9 @@
 {% endblock %}
 <br>
 {% block body %}
-<br>
-<br>
-<br>
-<br>
-<div class="jumbotron">
+
+
+<!-- <div class="jumbotron"> -->
     <div class="container-fluid">
         <div class="row">
             <div class="col-4">
@@ -38,8 +36,11 @@
 
                        </div>
                        <div class="col">
-                           <select class="form-select" id="ref_con" aria-label=" ">
+                           <select class="form-control" id="ref_con" aria-label=" ">
                                <option selected>Leadership training effectiveness</option>
+                               <option value="1">One</option>
+                               <option value="2">Two</option>
+                               <option value="3">Three</option>
                            </select>
                        </div>
 
@@ -51,7 +52,7 @@
 
                        </div>
                        <div class="col">
-                           <select class="form-select" id="con_cat" aria-label=" ">
+                           <select class="form-control" id="con_cat" aria-label=" ">
                                <option selected>Leadership </option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -65,7 +66,7 @@
 
                        </div>
                        <div class="col">
-                           <select class="form-select" id="con_dir" aria-label=" ">
+                           <select class="form-control" id="con_dir" aria-label=" ">
                                <option selected>Outcome</option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -79,7 +80,7 @@
 
                        </div>
                        <div class="col">
-                           <select class="form-select" id="eff_type" aria-label=" ">
+                           <select class="form-control" id="eff_type" aria-label=" ">
                                <option selected>Correlation</option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -93,135 +94,46 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-4 ">
+            <div class="col-5 ">
                 <img class="img-fluid shadow-lg p-3 mb-5 bg-white" src='../static/capture.png'>
             </div>
 
-            <div class="col-2 float-right">
-                <strong>Concept Category</strong>
-                <br>
-                <br>
+            
+
+            <div class="col-7">
                 <div class="row">
-                    <div class="col-6">
-                        <div class="dropdown float-right">
-                            <button class="btn btn-light dropdown-toggle float-right" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Learning
-                            </button>
-                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <a class="dropdown-item" href="#">Action</a>
-                                <a class="dropdown-item" href="#">Another action</a>
-                                <a class="dropdown-item" href="#">Something else here</a>
-                            </div>
-                        </div>
+                    <div class="col-10">
+                        <form class="form-inline" >
+                            <label for="concept" class="mr-sm-2">CONCEPT CATEGORY :</label>
+                            <input type="concept" class="form-control mb-2 mr-sm-2" placeholder="concept" id="concept">
+                            <div class="form-check mb-2 mr-sm-2"></div>
+                            <a class="btn btn-info btn-sm" onclick="applyAll()">Apply to all</a>
+                            <div class="form-check mb-2 mr-sm-2"></div>
+                            <a class="btn btn-info btn-sm" onclick="ClearAll()">Clear all</a>
+                        </form>  
+                    </div>
+                    <div class="col-2">
+                        <h4>
+                            <div style="text-align: right;">Table 1/5</div>
+                        </h4>
 
-                    </div>
-                    <div class="col-6">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-                            <label class="form-check-label" for="flexCheckChecked">
-                                Applly to all
-                            </label>
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <br>
-                <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Learning
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
-                        <a class="dropdown-item" href="#">Something else here</a>
+                        <br>
                     </div>
                 </div>
-                <br>
-                <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Learning
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
-                        <a class="dropdown-item" href="#">Something else here</a>
-                    </div>
-                </div>
-                <br>
-                <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Learning
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
-                        <a class="dropdown-item" href="#">Something else here</a>
-                    </div>
-                </div>
-                <br>
-                <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Learning
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
-                        <a class="dropdown-item" href="#">Something else here</a>
-                    </div>
-                </div>
-                <br>
-                <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Learning
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
-                        <a class="dropdown-item" href="#">Something else here</a>
-                    </div>
-                </div>
-                <br>
-                <div class="dropdown">
-                <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Learning
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <a class="dropdown-item" href="#">Action</a>
-                    <a class="dropdown-item" href="#">Another action</a>
-                    <a class="dropdown-item" href="#">Something else here</a>
-                </div>
-            </div>
-                <br>
-                <div class="dropdown">
-                <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Learning
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <a class="dropdown-item" href="#">Action</a>
-                    <a class="dropdown-item" href="#">Another action</a>
-                    <a class="dropdown-item" href="#">Something else here</a>
-                </div>
-            </div>
-                <br>
-            </div>
-
-            <div class="col-6">
-<!--                <h3>-->
-<!--                    <div style="text-align: center;">Extracted Table Data</div>-->
-<!--                </h3>-->
-                {% include 'table_test.html' %}
+                
                 <div class="row">
+                {% include 'table_temp.html' %}
+
+                </div>
+               <div class="row">
                     <div class="col-4">
-
+                        <a style="text-align: center;" class="btn btn-light btn-sm" onclick="add_bott()"> + Add new row </a>
 
                     </div>
                     <div class="col-8">
-                        <a style="text-align: center;" class="btn  btn-light btn-lg" onclick="html2json()">Ignore</a>
-                        <a style="text-align: center;" class="btn btn-out-dashed btn-light btn-lg" onclick="html2json()">Revist</a>
-                        <a style="text-align: center;" class="btn btn-outline-success btn-lg" onclick="html2json()"> Edit </a>
-                        <a class="btn btn-outline-primary btn-lg" onclick="html2json()">Accept</a>
+                        <a class="btn btn-danger btn-lg" onclick="Ignore()">Ignore</a>
+                        
+                        <a class="btn btn-success btn-lg" onclick="html2json()">Accept</a>
                     </div>
                 </div>
 
@@ -230,7 +142,7 @@
         </div>
 
     </div>
-</div>
+<!-- </div> -->
 
 <script>
     function html2json() {
@@ -268,4 +180,48 @@
     }
 
 </script>
+
+
+<script src="/static/css/bootstable.js"></script>
+<script>
+//apply
+$("#pdf").SetEditable();
+function add_bott() {
+        rowAddNewAndEdit('pdf');
+  };
+
+
+function Ignore() {
+    var json = '{';
+    console.log("Table Deleted")
+    return 200;
+  };
+
+
+function applyAll() {
+    var x = document.getElementById("concept").value; 
+    var table = document.getElementById("pdf");
+    var r = document.getElementById("pdf").rows.length;
+    for (i=1; i<r; i++) {
+        table.rows[i].cells[0].innerHTML = x
+    }
+    
+    return false
+
+};
+
+function ClearAll() {
+    
+    var table = document.getElementById("pdf");
+    var r = document.getElementById("pdf").rows.length;
+    for (i=1; i<r; i++) {
+        table.rows[i].cells[0].innerHTML = ""
+    }
+    
+    return false
+
+};
+
+</script>
+
 {% endblock %}
