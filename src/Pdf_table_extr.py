@@ -5,6 +5,7 @@ import PyPDF2
 import pandas as pd
 import numpy as np
 import shutil
+import re
 
 #import xlsxwriter
 def excel_init():
@@ -34,6 +35,33 @@ def get_title(path_files):
     
     pdf_in.close()
     return paper_title
+
+def get_doi(path_files):
+
+    """ This function returns doi of the input pdf file
+        Args: None
+        Returns: (str) paper_doi """
+    from pdfminer import high_level
+
+    local_pdf_filename = path_files
+    pages = [0,1] # just the first page
+
+    text = high_level.extract_text(local_pdf_filename, "", pages)
+    doi_re = re.compile("/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\>\"\<)])+")
+    #doi_re = re.compile("10.(\d)+/([^(\s\>\"\<)])+")
+    
+    #pdf_in = open(path_files,'rb')
+    #pdf_file = PyPDF2.PdfFileReader(pdf_in)
+    #text = pdf_file.getPage(0).extractText()
+    m = doi_re.search(text)
+    #print( text)
+    #pdf_in.close()
+    if m is None:
+        m="DOI not found!"
+    else:
+        m = m.group(0)
+    
+    return m
 
 #*******************************************************************************************
 def extract_tables(path_files):
@@ -286,14 +314,17 @@ if __name__ == '__main__':
         print ("No file to process!")
         sys.exit()
 
-    writer = excel_init()
+    #writer = excel_init()
 
-    jj = 1 # this is for sheet names in excel writer
+    #jj = 1 # this is for sheet names in excel writer
     temp_file = path+"temp.pdf"
 
     time_modified = os.path.getmtime(temp_file)
-
+    doi = get_doi(temp_file)
     paper_title = get_title(temp_file)
-    table_clean = extract_tables(temp_file)
-    write_to_excel(writer, jj, paper_title, table_clean)
-    jj += 1
+
+    print(doi)
+    print(paper_title)
+    #table_clean = extract_tables(temp_file)
+    #write_to_excel(writer, jj, paper_title, table_clean)
+    #jj += 1

@@ -31,6 +31,8 @@ def PullTable():
     # path = os.getcwd() + "/temp/"
     temp_file = "/tmp/temp.pdf"
     paper_title = get_title(temp_file)
+    doi = get_doi(temp_file)
+
     table_clean = extract_tables(temp_file)
     df = table_clean[1]
 #
@@ -46,10 +48,12 @@ def PullTable():
     footer = "{% endblock %}"
     text_file.write(footer)
     text_file.close()"""
+    paper_title = "Leadership Training Design, Delivery, and Implementation: A Meta-Analysis"
+    doi = "10.1037/apl0000241"
     #paths = os.getcwd() + "/src/temp/Capture.PNG"
     table_num = request.args.get('table', default = 1, type = int)
     
-    return render_template('indexT.html',table_num =table_num,  title="paper_title")
+    return render_template('indexT.html',table_num =table_num,  title=paper_title, doi=doi)
 
 @app.route('/list_pdfs')
 def list():
