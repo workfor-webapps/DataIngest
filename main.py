@@ -17,35 +17,39 @@ def index():
 
 @app.route('/PullTables')  #  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names
 def PullTable():
-    #CLIENT_SECRET_FILE = 'client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json'
-    #API_NAME = 'drive'
-    #API_VERSION = 'v3'
+    """CLIENT_SECRET_FILE = 'client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json'
+    API_NAME = 'drive'
+    API_VERSION = 'v3'
     
-    #SCOPES = ['https://www.googleapis.com/auth/drive']
+    SCOPES = ['https://www.googleapis.com/auth/drive']
 
-    #service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
-    #files = get_files(service)
-    #file1 = files[0]
-    #file_id = file1["id"]
-    #get_temp_pdf(service, file_id)
-     #path = os.getcwd() + "/temp/"
-    #temp_file = "/tmp/temp.pdf"
-    #paper_title = get_title(temp_file)
-    #table_clean = extract_tables(temp_file)
-    #df = table_clean[0]
+    service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
+    files = get_files(service)
+    file1 = files[0]
+    file_id = file1["id"]
+    get_temp_pdf(service, file_id)
+    # path = os.getcwd() + "/temp/"
+    temp_file = "/tmp/temp.pdf"
+    paper_title = get_title(temp_file)
+    table_clean = extract_tables(temp_file)
+    df = table_clean[1]
 #
 #     #-----------------Get json for table-------------
     #data = df.to_json(orient='table')
 #     #------------------------------------------------
 #
-    #html_file = df.to_html(index=False, justify="left", na_rep="", classes="table table-light table-striped table-hover table-bordered table-responsive-lg", table_id="pdf")
-    #text_file = open("./templates/table_temp.html", "w")
-    #header = '<!DOCTYPE html>\n<html lang="en">\n'
-    #text_file.write(header)
-    #text_file.write(html_file)
-    #text_file.close()'''
+    html_file = df.to_html(index=False, justify="left", na_rep="", classes="table table-light table-striped table-hover table-bordered table-responsive-lg", table_id="pdf")
+    text_file = open("./templates/table_temp1.html", "w")
+    header = "{% extends 'table_base.html' %}\n{% block body %}"
+    text_file.write(header)
+    text_file.write(html_file)
+    footer = "{% endblock %}"
+    text_file.write(footer)
+    text_file.close()"""
     #paths = os.getcwd() + "/src/temp/Capture.PNG"
-    return render_template('indexT.html', title="paper_title")
+    table_num = request.args.get('table', default = 1, type = int)
+    
+    return render_template('indexT.html',table_num =table_num,  title="paper_title")
 
 @app.route('/list_pdfs')
 def list():
@@ -82,7 +86,9 @@ def post_json():
 
         print(table)  # parse as JSON
         print('clicked')
-        return 'Sucesss', 200
+        Tn=2
+        return render_template('indexT.html',Tn=Tn, title="paper_title2")
+        #return 'Sucesss', 200
 
 @app.route('/ignore_json')
 def ignore_json():

@@ -122,7 +122,15 @@
                 </div>
                 
                 <div class="row">
-                {% include 'table_temp.html' %}
+                
+                {% if table_num==1 %}
+                {%include 'table_temp.html'%}
+                {% endif  %}
+
+                {%if table_num==2 %}
+                {%   include 'table_temp1.html' %}
+                {% endif  %}
+                
 
                 </div>
                <div class="row">
@@ -176,6 +184,15 @@
     xhr.send(JSON.stringify(rows));
 
     console.log(JSON.stringify(rows))
+    
+    // reload page
+    var url = window.location.href;    
+    if (url.indexOf('?') > -1){
+        
+    }else{
+        url += '?table=2'
+    }
+    window.location.href = url;
     return JSON.stringify(rows);
     }
 
@@ -221,7 +238,19 @@ function ClearAll() {
     return false
 
 };
-
+function GetURLParameter(sParam)
+{
+    var sPageURL = window.location.search.substring(1);
+    var sURLVariables = sPageURL.split('&');
+    for (var i = 0; i < sURLVariables.length; i++) 
+    {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] == sParam) 
+        {
+            return sParameterName[1];
+        }
+    }
+};
 </script>
 
 {% endblock %}
