@@ -53,7 +53,7 @@ def PullTable():
     #paths = os.getcwd() + "/src/temp/Capture.PNG"
     table_num = request.args.get('table', default = 1, type = int)
     
-    return render_template('indexT.html',table_num =table_num,  title=paper_title, doi=doi)
+    return render_template('indexT.html',table_num =table_num,  title=paper_title, DOI=doi)
 
 @app.route('/list_pdfs')
 def list():
