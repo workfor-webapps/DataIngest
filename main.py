@@ -1,5 +1,7 @@
+from flask.globals import session
+from flask.helpers import flash, url_for
 from src.drive_functions import Create_Service, get_files, get_temp_pdf
-from src.Pdf_table_extr import extract_tables, get_title
+from src.Pdf_table_extr import extract_tables, get_title_from_pdf
 #from google.cloud import datastore
 from flask import Flask, render_template, request, redirect
 from flask.wrappers import Request
@@ -7,14 +9,50 @@ import os
 
 """Main python file for flask application
 """
+class User:
+    def __init__(self, id , username, password) -> None:
+        self.id = id
+        self.username = username
+        self.password = password
+    def __repr__(self) -> str:
+        return f'<user: {self.username}'
+
+users = []
+users.append(User(id=1, username='admin', password='admin'))
 
 app = Flask(__name__)
+app.secret_key = b'_5#y2L"F4Q8z\n\xec1]/'
 
+@app.before_request
+def before_request():
+    if 'user_id' in session:
+        user = [x for x in users if x.id == session['user_id']]
+    
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        session.pop('user_id', None)
+        username = request.form['username']
+        password = request.form['password']
+        
+        user = [x for x in users if x.username == username and x.password == password]
+        if user == []:
+            flash ('Username or password incorrect. Please try agin!')
+            return redirect(url_for('login'))
+        else:
+            session['user_id'] = user[0].id
+            return redirect(url_for('index'))
+    
+    return render_template('login.html')
 
 @app.route('/')
 def index():
 
-    return render_template('index.html',pdf_list=[])
+    if 'user_id' in session:
+        return render_template('index.html',pdf_list=[])
+    else:
+        return redirect(url_for('login'))
     
 
 @app.route('/PullTables')  #  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names

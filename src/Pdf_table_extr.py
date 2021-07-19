@@ -69,6 +69,8 @@ def get_pubData(doi):
     pub_data = crossref_commons.retrieval.get_publication_as_json(doi)
 
     return pub_data
+
+#https://gitlab.com/crossref/crossref_commons_py
 class PubData:
     title= ""
     authors = ""
