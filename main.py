@@ -5,6 +5,8 @@ from flask import Flask, render_template, request, redirect
 from flask.wrappers import Request
 import os
 
+"""Main python file for flask application
+"""
 
 app = Flask(__name__)
 
@@ -90,9 +92,9 @@ def post_json():
 
         print(table)  # parse as JSON
         print('clicked')
-        Tn=2
-        return render_template('indexT.html',Tn=Tn, title="paper_title2")
-        #return 'Sucesss', 200
+        
+        #return render_template('indexT.html', title="paper_title2")
+        return 'Sucesss', 200
 
 @app.route('/ignore_json')
 def ignore_json():

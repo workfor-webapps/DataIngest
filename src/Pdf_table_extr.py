@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import shutil
 import re
+import crossref_commons.retrieval
 
 #import xlsxwriter
 def excel_init():
@@ -22,7 +23,7 @@ def excel_init():
     writer = pd.ExcelWriter('./Processed.xlsx', engine='xlsxwriter')
     return(writer)
 
-def get_title(path_files):
+def get_title_from_pdf(path_files):
     """ This function returns title of the input pdf file
         Args: None
         Returns: (str) paper_title """
@@ -62,6 +63,40 @@ def get_doi(path_files):
         m = m.group(0)
     
     return m
+def get_pubData(doi):
+    
+
+    pub_data = crossref_commons.retrieval.get_publication_as_json(doi)
+
+    return pub_data
+class PubData:
+    title= ""
+    authors = ""
+    jur = ""
+    pub_year = 0
+    status = True
+
+    def __init__(self, doi) -> None:
+        
+        try:
+            self.data = crossref_commons.retrieval.get_publication_as_json(doi)
+        except ValueError: #DOI could not be resulved
+            print("DOI does not exist in crossref database")
+            self.status = False
+        
+        if self.status:
+            self.title = self.data["title"][0]
+            Authors = [[x["given"], x["family"]] for x in self.data['author']]
+            Author_str = ""
+            for i in range(len(Authors)):
+                for j in range(2):
+                    Author_str += Authors[i][j] 
+                Author_str += ", "
+            self.authors = Author_str
+            self.jur = self.data['short-container-title'][0]
+
+        
+    
 
 #*******************************************************************************************
 def extract_tables(path_files):
@@ -319,12 +354,17 @@ if __name__ == '__main__':
     #jj = 1 # this is for sheet names in excel writer
     temp_file = path+"temp.pdf"
 
-    time_modified = os.path.getmtime(temp_file)
+    #time_modified = os.path.getmtime(temp_file)
     doi = get_doi(temp_file)
-    paper_title = get_title(temp_file)
+    
+    x = PubData(doi)
 
-    print(doi)
-    print(paper_title)
+    
+    
+    print(x.data)
+    #print("Title= ", x.title)
+
+    #print(paper_title)
     #table_clean = extract_tables(temp_file)
     #write_to_excel(writer, jj, paper_title, table_clean)
     #jj += 1
