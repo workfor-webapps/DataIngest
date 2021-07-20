@@ -1,15 +1,21 @@
-from flask.globals import session
-from flask.helpers import flash, url_for
+#from flask.globals import session
+#from flask.helpers import flash, url_for
 from src.drive_functions import Create_Service, get_files, get_temp_pdf
 from src.Pdf_table_extr import extract_tables, get_title_from_pdf
 #from google.cloud import datastore
-from flask import Flask, render_template, request, redirect
-from flask.wrappers import Request
+from flask import Flask, render_template, request, redirect, g, flash, url_for, session
 import os
 
-"""Main python file for flask application
+"""Main python file for flask application. This app uses google drive api to read and write data from
+    a personal google account (needs to be changed to server maybe?). 
 """
 class User:
+    """This is a user class for storing user credential for logging in.
+    
+    :param id: Id for usres 
+    :type id: int
+
+    """
     def __init__(self, id , username, password) -> None:
         self.id = id
         self.username = username
@@ -21,12 +27,14 @@ users = []
 users.append(User(id=1, username='admin', password='admin'))
 
 app = Flask(__name__)
-app.secret_key = b'_5#y2L"F4Q8z\n\xec1]/'
+app.secret_key = 'thisismysecretekey'
 
 @app.before_request
 def before_request():
+    g.user = None
     if 'user_id' in session:
         user = [x for x in users if x.id == session['user_id']]
+        g.user = user
     
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -49,11 +57,10 @@ def login():
 @app.route('/')
 def index():
 
-    if 'user_id' in session:
-        return render_template('index.html',pdf_list=[])
-    else:
+    if not g.user:
         return redirect(url_for('login'))
-    
+            
+    return render_template('index.html',pdf_list=[])
 
 @app.route('/PullTables')  #  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names
 def PullTable():

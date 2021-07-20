@@ -11,7 +11,8 @@ PyPDF2==1.26.0
 xlsxwriter==1.4.4
 pdfminer.six
 crossref-commons
-
+sphinx
+sphinx-rtd-theme
 
 
 
