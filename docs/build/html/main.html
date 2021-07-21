@@ -40,7 +40,9 @@
 
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="src package" href="src.html" />
+    <link rel="prev" title="PDEA" href="modules.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -85,11 +87,15 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">main module</a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">PDEA</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">main module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.html">src package</a></li>
 </ul>
-</div>
+</li>
+</ul>
+
             
           
         </div>
@@ -136,6 +142,8 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
+          <li><a href="modules.html">PDEA</a> &raquo;</li>
+        
       <li>main module</li>
     
     
@@ -155,8 +163,110 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="main-module">
-<h1>main module<a class="headerlink" href="#main-module" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-main">
+<span id="main-module"></span><h1>main module<a class="headerlink" href="#module-main" title="Permalink to this headline">¶</a></h1>
+<p>Main python file for flask application. This app uses google drive api to read and write data from
+a personal google account (needs to be changed to server maybe?).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="main.PullTable">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">PullTable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#PullTable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.PullTable" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>CLIENT_SECRET_FILE = ‘client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json’</dt><dd><p>API_NAME = ‘drive’
+API_VERSION = ‘v3’</p>
+<p>SCOPES = [‘<a class="reference external" href="https://www.googleapis.com/auth/drive">https://www.googleapis.com/auth/drive</a>’]</p>
+<p>service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
+files = get_files(service)
+file1 = files[0]
+file_id = file1[“id”]
+get_temp_pdf(service, file_id)
+# path = os.getcwd() + “/temp/”
+temp_file = “/tmp/temp.pdf”
+paper_title = get_title(temp_file)
+doi = get_doi(temp_file)</p>
+<p>table_clean = extract_tables(temp_file)
+df = table_clean[1]</p>
+</dd>
+</dl>
+<p>#
+#     #—————–Get json for table————-</p>
+<blockquote>
+<div><p>#data = df.to_json(orient=’table’)</p>
+</div></blockquote>
+<p>#     #————————————————
+#</p>
+<blockquote>
+<div><p>html_file = df.to_html(index=False, justify=”left”, na_rep=””, classes=”table table-light table-striped table-hover table-bordered table-responsive-lg”, table_id=”pdf”)
+text_file = open(“./templates/table_temp1.html”, “w”)
+header = “{% extends ‘table_base.html’ %}</p>
+</div></blockquote>
+<dl class="simple">
+<dt>{% block body %}”</dt><dd><p>text_file.write(header)
+text_file.write(html_file)
+footer = “{% endblock %}”
+text_file.write(footer)
+text_file.close()</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.User">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">User</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#User"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.User" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This is a class to store user credentials for loging in</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> (<em>int</em>) – User id</p></li>
+<li><p><strong>username</strong> (<em>str</em>) – username</p></li>
+<li><p><strong>password</strong> (<em>str</em>) – password</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="main.before_request">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">before_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#before_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.before_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="main.ignore_json">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">ignore_json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ignore_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.ignore_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="main.index">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="main.list">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>CLIENT_SECRET_FILE = ‘client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json’
+API_NAME = ‘drive’
+API_VERSION = ‘v3’</p>
+<p>SCOPES = [‘<a class="reference external" href="https://www.googleapis.com/auth/drive">https://www.googleapis.com/auth/drive</a>’]</p>
+<p>service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
+files = get_files(service)
+#pdfs = [name for name in files[“name”]]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="main.login">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#login"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.login" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="main.post_json">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">post_json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#post_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.post_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="main.showPDF">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">showPDF</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#showPDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#main.showPDF" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 
 
@@ -164,6 +274,10 @@
            
           </div>
           <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="src.html" class="btn btn-neutral float-right" title="src package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="modules.html" class="btn btn-neutral float-left" title="PDEA" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
 
   <hr/>
 

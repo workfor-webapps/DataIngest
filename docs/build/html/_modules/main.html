@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>main &mdash; PDEA 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> PDEA
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">PDEA</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PDEA</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>main</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for main</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Main python file for flask application. This app uses google drive api to read and write data from</span>
+<span class="sd">    a personal google account (needs to be changed to server maybe?). </span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1">#from flask.globals import session</span>
+<span class="c1">#from flask.helpers import flash, url_for</span>
+<span class="kn">from</span> <span class="nn">src.drive_functions</span> <span class="kn">import</span> <span class="n">Create_Service</span><span class="p">,</span> <span class="n">get_files</span><span class="p">,</span> <span class="n">get_temp_pdf</span>
+<span class="kn">from</span> <span class="nn">src.Pdf_table_extr</span> <span class="kn">import</span> <span class="n">extract_tables</span><span class="p">,</span> <span class="n">get_title_from_pdf</span>
+<span class="c1">#from google.cloud import datastore</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">redirect</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">flash</span><span class="p">,</span> <span class="n">url_for</span><span class="p">,</span> <span class="n">session</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<div class="viewcode-block" id="User"><a class="viewcode-back" href="../main.html#main.User">[docs]</a><span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This is a class to store user credentials for loging in</span>
+<span class="sd">    </span>
+<span class="sd">    :param id: User id </span>
+<span class="sd">    :type id: int</span>
+<span class="sd">    :param username: username</span>
+<span class="sd">    :type username: str</span>
+<span class="sd">    :param password: password</span>
+<span class="sd">    :type password: str</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span> <span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;user: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+<span class="n">users</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">users</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;admin&#39;</span><span class="p">))</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">secret_key</span> <span class="o">=</span> <span class="s1">&#39;thisismysecretekey&#39;</span>
+
+<div class="viewcode-block" id="before_request"><a class="viewcode-back" href="../main.html#main.before_request">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">before_request</span>
+<span class="k">def</span> <span class="nf">before_request</span><span class="p">():</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="s1">&#39;user_id&#39;</span> <span class="ow">in</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">users</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]]</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">user</span></div>
+    
+
+<div class="viewcode-block" id="login"><a class="viewcode-back" href="../main.html#main.login">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/login&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">login</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;user_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+        
+        <span class="n">user</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">users</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">username</span> <span class="o">==</span> <span class="n">username</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">password</span> <span class="o">==</span> <span class="n">password</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">user</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="n">flash</span> <span class="p">(</span><span class="s1">&#39;Username or password incorrect. Please try agin!&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">user</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;login.html&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="index"><a class="viewcode-back" href="../main.html#main.index">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">index</span><span class="p">():</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">g</span><span class="o">.</span><span class="n">user</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">))</span>
+            
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;index.html&#39;</span><span class="p">,</span><span class="n">pdf_list</span><span class="o">=</span><span class="p">[])</span></div>
+
+<div class="viewcode-block" id="PullTable"><a class="viewcode-back" href="../main.html#main.PullTable">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/PullTables&#39;</span><span class="p">)</span>  <span class="c1">#  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names</span>
+<span class="k">def</span> <span class="nf">PullTable</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;CLIENT_SECRET_FILE = &#39;client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json&#39;</span>
+<span class="sd">    API_NAME = &#39;drive&#39;</span>
+<span class="sd">    API_VERSION = &#39;v3&#39;</span>
+<span class="sd">    </span>
+<span class="sd">    SCOPES = [&#39;https://www.googleapis.com/auth/drive&#39;]</span>
+
+<span class="sd">    service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)</span>
+<span class="sd">    files = get_files(service)</span>
+<span class="sd">    file1 = files[0]</span>
+<span class="sd">    file_id = file1[&quot;id&quot;]</span>
+<span class="sd">    get_temp_pdf(service, file_id)</span>
+<span class="sd">    # path = os.getcwd() + &quot;/temp/&quot;</span>
+<span class="sd">    temp_file = &quot;/tmp/temp.pdf&quot;</span>
+<span class="sd">    paper_title = get_title(temp_file)</span>
+<span class="sd">    doi = get_doi(temp_file)</span>
+
+<span class="sd">    table_clean = extract_tables(temp_file)</span>
+<span class="sd">    df = table_clean[1]</span>
+<span class="sd">#</span>
+<span class="sd">#     #-----------------Get json for table-------------</span>
+<span class="sd">    #data = df.to_json(orient=&#39;table&#39;)</span>
+<span class="sd">#     #------------------------------------------------</span>
+<span class="sd">#</span>
+<span class="sd">    html_file = df.to_html(index=False, justify=&quot;left&quot;, na_rep=&quot;&quot;, classes=&quot;table table-light table-striped table-hover table-bordered table-responsive-lg&quot;, table_id=&quot;pdf&quot;)</span>
+<span class="sd">    text_file = open(&quot;./templates/table_temp1.html&quot;, &quot;w&quot;)</span>
+<span class="sd">    header = &quot;{% extends &#39;table_base.html&#39; %}\n{% block body %}&quot;</span>
+<span class="sd">    text_file.write(header)</span>
+<span class="sd">    text_file.write(html_file)</span>
+<span class="sd">    footer = &quot;{% endblock %}&quot;</span>
+<span class="sd">    text_file.write(footer)</span>
+<span class="sd">    text_file.close()&quot;&quot;&quot;</span>
+    <span class="n">paper_title</span> <span class="o">=</span> <span class="s2">&quot;Leadership Training Design, Delivery, and Implementation: A Meta-Analysis&quot;</span>
+    <span class="n">doi</span> <span class="o">=</span> <span class="s2">&quot;10.1037/apl0000241&quot;</span>
+    <span class="c1">#paths = os.getcwd() + &quot;/src/temp/Capture.PNG&quot;</span>
+    <span class="n">table_num</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;table&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">type</span> <span class="o">=</span> <span class="nb">int</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;indexT.html&#39;</span><span class="p">,</span><span class="n">table_num</span> <span class="o">=</span><span class="n">table_num</span><span class="p">,</span>  <span class="n">title</span><span class="o">=</span><span class="n">paper_title</span><span class="p">,</span> <span class="n">DOI</span><span class="o">=</span><span class="n">doi</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="list"><a class="viewcode-back" href="../main.html#main.list">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/list_pdfs&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">list</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;CLIENT_SECRET_FILE = &#39;client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json&#39;</span>
+<span class="sd">    API_NAME = &#39;drive&#39;</span>
+<span class="sd">    API_VERSION = &#39;v3&#39;</span>
+<span class="sd">    </span>
+<span class="sd">    SCOPES = [&#39;https://www.googleapis.com/auth/drive&#39;]</span>
+
+<span class="sd">    service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)</span>
+<span class="sd">    files = get_files(service)</span>
+<span class="sd">    #pdfs = [name for name in files[&quot;name&quot;]] &quot;&quot;&quot;</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;A.pdf&quot;</span><span class="p">,</span> <span class="s2">&quot;B.pdf&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;index.html&#39;</span><span class="p">,</span> <span class="n">pdf_list</span><span class="o">=</span> <span class="n">files</span><span class="p">)</span> </div>
+
+
+
+<div class="viewcode-block" id="post_json"><a class="viewcode-back" href="../main.html#main.post_json">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/post_json&#39;</span><span class="p">,</span> <span class="n">methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">post_json</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">table</span><span class="p">))</span>
+        
+        <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1">#import csv</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="s2">&quot;table.xlsx&quot;</span> <span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1">#with open(&#39;table.json&#39;, &#39;w&#39;) as f:</span>
+        <span class="c1">#    w = csv.DictWriter(f, table[0].keys())</span>
+        <span class="c1">#    w.writeheader()</span>
+        <span class="c1">#    for line in table:</span>
+        <span class="c1">#        w.writerow(line)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>  <span class="c1"># parse as JSON</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;clicked&#39;</span><span class="p">)</span>
+        
+        <span class="c1">#return render_template(&#39;indexT.html&#39;, title=&quot;paper_title2&quot;)</span>
+        <span class="k">return</span> <span class="s1">&#39;Sucesss&#39;</span><span class="p">,</span> <span class="mi">200</span></div>
+
+<div class="viewcode-block" id="ignore_json"><a class="viewcode-back" href="../main.html#main.ignore_json">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/ignore_json&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">ignore_json</span><span class="p">():</span>
+    
+    <span class="k">return</span> <span class="s1">&#39;Sucesss&#39;</span><span class="p">,</span> <span class="mi">200</span></div>
+
+
+<div class="viewcode-block" id="showPDF"><a class="viewcode-back" href="../main.html#main.showPDF">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/showPDF&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">showPDF</span><span class="p">():</span>
+    
+
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;pdf.html&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Foad Farivar.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
