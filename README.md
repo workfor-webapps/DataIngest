@@ -6,6 +6,7 @@ Pdf table data extraction and analysis repository
 ## Contributors:
 * Curtin Institute for Computation (CIC)
   * Foad Farivar (foad.farivar@curtin.edu.au)
+  * Daniel Marrable (D.Marrable@curtin.edu.au)
  
 * School of Management and Marketing 
   * Ramon Wenel (ramon.wenzel@curtin.edu.au)
