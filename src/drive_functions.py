@@ -1,3 +1,7 @@
+"""This is the google drive api module and contatins functions to interact to google drive
+
+"""
+
 import pickle
 import os
 import io
@@ -9,7 +13,17 @@ from google.auth.transport.requests import Request
 
 
 def Create_Service(client_secret_file, api_name, api_version, *scopes):
-    #print(client_secret_file, api_name, api_version, scopes, sep='-')
+    """Create a service connection to google drive
+
+    :param client_secret_file: Client secret file generated from google api
+    :type client_secret_file: json
+    :param api_name: The api name for this aplication(drive)
+    :type api_name: str
+    :param api_version: version of the api(we are using version 3)
+    :type api_version: str
+    :return: service
+    :rtype: api service
+    """
     CLIENT_SECRET_FILE = client_secret_file
     API_SERVICE_NAME = api_name
     API_VERSION = api_version
@@ -47,8 +61,10 @@ def Create_Service(client_secret_file, api_name, api_version, *scopes):
         return None
 
 def upload_files(service):
-    """
-    Creates a folder and upload a file to it
+    """function to upload files to google drive through api call
+
+    :param service: created google drive serviece
+    :type service: API service
     """
     # authenticate account
     #service = get_gdrive_service()
@@ -74,8 +90,13 @@ def upload_files(service):
     print("File created, id:", file.get("id"))
 
 def get_files(service):
-    """ A function to download a temporary pdf file to temp folder 
-        to extract the tables and clean"""
+    """A function to read files metadata from a folder (PDEA) in google drive
+    to extract the tables
+
+    :param service: google drive serviece
+    :type service: service
+    """
+     
 
     # First, get the folder ID by querying by mimeType and name
     folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'PDEA'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
@@ -91,10 +112,20 @@ def get_files(service):
     return items
 
 def get_temp_pdf(service, file_id):
+    """This function downloads a file from google drive to a local machine
+    using its file ID
+
+    :param service: Google drive service
+    :type service: service
+    :param file_id: google drive file id
+    :type file_id: str
+    """
+
+
 #list_files(items) 
 #for item in items:
     # get the File ID
-#    file_id = item["id"]
+    #file_id = item["id"]
     # get the name of file
     #name = item["name"]
 

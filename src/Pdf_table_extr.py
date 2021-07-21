@@ -1,3 +1,10 @@
+"""This is a python script for extraction of Meta_Analysis table data and
+    developed for this specific purpose. In order to run this script please follow the steps
+    in README.md file 
+
+    :return: Publication info and extracted table data
+    :rtype: datasets
+"""
 import os
 import sys
 import tabula
@@ -11,8 +18,11 @@ import crossref_commons.retrieval
 #import xlsxwriter
 def excel_init():
     """ This function initializes an excel writer and creates Processed excel file.
-        input: none
-        returns: ExcelWriter object"""
+        
+        :param: none
+        :return writer: ExcelWriter object and creates a Processed.xlsx file
+        :rtype: ExcelWriter object
+        """
 
     if os.path.isfile("./Processed.xlsx"): 
         ans = str(input("Warning: Processed.xlsx file in the working directory will be overwritten, would you like to continue? y/n :")).upper()
@@ -24,9 +34,13 @@ def excel_init():
     return(writer)
 
 def get_title_from_pdf(path_files):
-    """ This function returns title of the input pdf file
-        Args: None
-        Returns: (str) paper_title """
+    """This function uses PyPDF2 library to extract the paper title. 
+
+    :param path_files: pdf file location
+    :type path_files: str
+    :return: paper title
+    :rtype: str
+    """
     pdf_in = open(path_files,'rb')
     pdf_file = PyPDF2.PdfFileReader(pdf_in)
     if pdf_file.getOutlines() == []: 
@@ -39,9 +53,14 @@ def get_title_from_pdf(path_files):
 
 def get_doi(path_files):
 
-    """ This function returns doi of the input pdf file
-        Args: None
-        Returns: (str) paper_doi """
+    """This function finds publication DOI from a PDF's first or second page using regex
+    
+    :param path_files: path to the pdf file
+    :type path_files: str
+    :return: DOI
+    :rtype: str
+    """
+
     from pdfminer import high_level
 
     local_pdf_filename = path_files
@@ -64,7 +83,13 @@ def get_doi(path_files):
     
     return m
 def get_pubData(doi):
-    
+    """A function to resolve doi form crossref database
+
+    :param doi: DOI of a publication
+    :type doi: str
+    :return: publication metadata
+    :rtype: json
+    """
 
     pub_data = crossref_commons.retrieval.get_publication_as_json(doi)
 
@@ -72,6 +97,20 @@ def get_pubData(doi):
 
 #https://gitlab.com/crossref/crossref_commons_py
 class PubData:
+    """This class stores publication data extracted from crossref call
+
+    :param title: title of the publication
+    :type title: str, defaults to none
+    :param authors: list of authors
+    :type authors: str, defaults to none
+    :param jur: Name of the journal
+    :type jur: str
+    :param pub_year: Published year, defaults to 0
+    :type pub_year: int
+    :param doi: doi of the publication
+    :type: str
+    """
+
     title= ""
     authors = ""
     jur = ""
@@ -79,7 +118,11 @@ class PubData:
     status = True
 
     def __init__(self, doi) -> None:
-        
+        """class constractor
+
+        :param doi: doi
+        :type doi: str
+        """
         try:
             self.data = crossref_commons.retrieval.get_publication_as_json(doi)
         except ValueError: #DOI could not be resulved
@@ -328,12 +371,6 @@ def write_to_excel(writer, jj, paper_title, table_clean):
         start_row += table_clean[ii].shape[0]+1
     writer.save()
     return 0
-
-#********************************************************************************************
-
-""" This is a python script for extraction of Meta_Analysis table data and
-    developed for this specific purpose. In order to run this script please follow the steps
-    in README.md file  """
 
 #**************************************************************************************
 #***************************** Initializing *******************************************

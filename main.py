@@ -1,3 +1,7 @@
+"""Main python file for flask application. This app uses google drive api to read and write data from
+    a personal google account (needs to be changed to server maybe?). 
+"""
+
 #from flask.globals import session
 #from flask.helpers import flash, url_for
 from src.drive_functions import Create_Service, get_files, get_temp_pdf
@@ -6,15 +10,16 @@ from src.Pdf_table_extr import extract_tables, get_title_from_pdf
 from flask import Flask, render_template, request, redirect, g, flash, url_for, session
 import os
 
-"""Main python file for flask application. This app uses google drive api to read and write data from
-    a personal google account (needs to be changed to server maybe?). 
-"""
 class User:
-    """This is a user class for storing user credential for logging in.
+    """This is a class to store user credentials for loging in
     
-    :param id: Id for usres 
+    :param id: User id 
     :type id: int
-
+    :param username: username
+    :type username: str
+    :param password: password
+    :type password: str
+    
     """
     def __init__(self, id , username, password) -> None:
         self.id = id
@@ -64,7 +69,7 @@ def index():
 
 @app.route('/PullTables')  #  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names
 def PullTable():
-    """CLIENT_SECRET_FILE = 'client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json'
+    """CLIENT_SECRET_FILE = 'client_secret.json'
     API_NAME = 'drive'
     API_VERSION = 'v3'
     
@@ -102,7 +107,7 @@ def PullTable():
     
     return render_template('indexT.html',table_num =table_num,  title=paper_title, DOI=doi)
 
-@app.route('/list_pdfs')
+@app.route('/status_update')
 def list():
     """CLIENT_SECRET_FILE = 'client_secret_1069569447-dopmb5ed801nq4ovfvla6ba4pa3k5217.apps.googleusercontent.com.json'
     API_NAME = 'drive'
