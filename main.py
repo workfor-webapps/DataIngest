@@ -2,7 +2,7 @@
     a personal google account (needs to be changed to server maybe?). 
 """
 
-from src.drive_functions import get_new_files
+from src.drive_functions import get_new_files, get_NoDOI_folder_id, move_file, get_archive_folder_id
 from src.Pdf_table_extr import PubData, extract_tables, get_doi, get_title_from_pdf
 #from google.cloud import datastore
 from flask import Flask, render_template, request, redirect, g, flash, url_for, session, jsonify
@@ -176,7 +176,7 @@ def PullTable():
 @app.route('/extract')
 def extract():
     
-       
+    
     credential = get_cred()
     session['credentials'] = credentials_to_dict(credential)
 
@@ -201,11 +201,14 @@ def extract():
     file_items = get_new_files(drive)
     
     #initialize files dict
-    files_data = dict.fromkeys(['name', 'doi', 'status'])
+    #files_data = dict.fromkeys(['name', 'doi', 'status'])
 
-    file_name = []
-    file_doi = []
-    file_status = []
+    #file_name = []
+    #file_doi = []
+    #file_status = []
+    if not file_items:
+        return 'No new file', 200
+
     for file in file_items:
         #1. download the file 
         request = drive.files().get_media(fileId=file["id"])
@@ -218,16 +221,32 @@ def extract():
             status, done = downloader.next_chunk()
             #print ("Download: %", int(status.progress() * 100))
 
-        file_doi.append(get_doi(fh))
-        file_status.append("New")
-        file_name.append(file["name"])
+        doi = get_doi(fh)
 
-    files_data["name"] =  file_name
-    files_data["doi"] =  file_doi
-    files_data["status"] = file_status
+        if doi == "DOI not found!": # move to "nodoi" folder"
+            file_id = file["id"]
+            folder_id = get_NoDOI_folder_id(drive)
+            move_file(service=drive, file_id=file_id,folder_id=folder_id)
+        else:
+            state = store_doi(doi)
+            
+            if state == "Old":
+                file_id = file["id"]
+                folder_id = get_archive_folder_id(drive)
+                move_file(service=drive, file_id=file_id,folder_id=folder_id)
+            else:
+                # here extract and save table data
+                pass
+
+
+
+
+        
+
+
     #df = tabula.read_pdf(files[0]["webContentLink"], pages='all')
     #print(df[0])
-
+    return 'Sucesss', 200
 
 
 @app.route('/status_update')
@@ -302,7 +321,7 @@ def store_doi(doi, url):
     results = list(query.fetch())
 
     if not results:
-        status = ""
+        status = "New"
         # Create an incomplete key for an entity of kind "Task". An incomplete
         # key is one where Datastore will automatically generate an Id
         key = datastore_client.key("files")
@@ -316,6 +335,9 @@ def store_doi(doi, url):
         )
         
         datastore_client.put(entity)
+    
+    else:
+        status = "Old"
 
     return status
 

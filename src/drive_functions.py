@@ -31,6 +31,56 @@ def upload_files(service):
     #file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
     print("File created, id:", file.get("id"))
 
+def get_archive_folder_id(service):
+    
+    # First, get the folder ID by querying by mimeType and name
+    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'Archive'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
+    # this gives us a list of all folders with that name
+    folderIdResult = folderId.get('files', [])
+    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
+    id = folderIdResult[0].get('id')
+    return id
+
+def get_NoDOI_folder_id(service):
+    
+    # First, get the folder ID by querying by mimeType and name
+    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'NoDOI'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
+    # this gives us a list of all folders with that name
+    folderIdResult = folderId.get('files', [])
+    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
+    id = folderIdResult[0].get('id')
+    return id
+
+def get_Images_folder_id(service):
+    
+    # First, get the folder ID by querying by mimeType and name
+    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'Images'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
+    # this gives us a list of all folders with that name
+    folderIdResult = folderId.get('files', [])
+    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
+    id = folderIdResult[0].get('id')
+    return id
+
+def get_Json_folder_id(service):
+    
+    # First, get the folder ID by querying by mimeType and name
+    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'Json'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
+    # this gives us a list of all folders with that name
+    folderIdResult = folderId.get('files', [])
+    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
+    id = folderIdResult[0].get('id')
+    return id
+
+def get_New_folder_id(service):
+    
+    # First, get the folder ID by querying by mimeType and name
+    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'New'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
+    # this gives us a list of all folders with that name
+    folderIdResult = folderId.get('files', [])
+    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
+    id = folderIdResult[0].get('id')
+    return id
+
 def get_new_files(service):
     """A function to read files metadata from a folder (PDEA) in google drive
     to extract the tables
@@ -39,13 +89,7 @@ def get_new_files(service):
     :type service: service
     """
      
-
-    # First, get the folder ID by querying by mimeType and name
-    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'New'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    # this gives us a list of all folders with that name
-    folderIdResult = folderId.get('files', [])
-    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
-    id = folderIdResult[0].get('id')
+    id = get_New_folder_id(service)
 
     # Now, using the folder ID gotten above, we get all the files from
     # that particular folder
@@ -62,6 +106,19 @@ def get_temp_pdf(service, file_id):
     :param file_id: google drive file id
     :type file_id: str
     """
+
+
+def move_file(service, file_id, folder_id):
+
+    # Retrieve the existing parents to remove
+    file = service.files().get(fileId=file_id,
+                                    fields='parents').execute()
+    previous_parents = ",".join(file.get('parents'))
+    # Move the file to the new folder
+    file = service.files().update(fileId=file_id,
+                                        addParents=folder_id,
+                                        removeParents=previous_parents,
+                                        fields='id, parents').execute()
 
 
 #list_files(items) 
