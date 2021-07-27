@@ -40,11 +40,15 @@
                   </tr>
                 </thead>
                 <tbody>
-                {% for pdfs in pdf_list %}    
-                  <tr class="success">
-                    <td style="font-size: medium;">{{pdfs}}</td>
-                    <td> </td>
-                    <td> </td>
+                {% for i in range(file_numbers) %}    
+                    {% if files_data["status"][i] == "Complete" %} 
+                     <tr class="success">
+                    {%else %}
+                    <tr class="info">
+                    {% endif %}
+                    <td style="font-size: medium;">{{files_data["name"][i]}}</td>
+                    <td style="font-size: medium;"> {{files_data["doi"][i]}}</td>
+                    <td style="font-size: medium;"> {{files_data["status"][i]}}</td>
                   </tr>      
                 {% endfor %}
                 </tbody>

@@ -1,4 +1,4 @@
-"""This is a python script for extraction of Meta_Analysis table data and
+"""This is a module for extraction of Meta_Analysis table data and
     developed for this specific purpose. In order to run this script please follow the steps
     in README.md file 
 
@@ -14,76 +14,86 @@ import numpy as np
 import shutil
 import re
 import crossref_commons.retrieval
+from pdfminer import high_level
 
-#import xlsxwriter
+
+
+
 def excel_init():
+    
     """ This function initializes an excel writer and creates Processed excel file.
         
-        :param: none
         :return writer: ExcelWriter object and creates a Processed.xlsx file
         :rtype: ExcelWriter object
         """
 
+    #check if excel file exists
     if os.path.isfile("./Processed.xlsx"): 
         ans = str(input("Warning: Processed.xlsx file in the working directory will be overwritten, would you like to continue? y/n :")).upper()
+        
+        #if file exist ask if you wnat to overwrite it
         if ans == "N" or ans == "NO":
             print("Terminating the program...")
             sys.exit() 
+
     #open an excel file
     writer = pd.ExcelWriter('./Processed.xlsx', engine='xlsxwriter')
     return(writer)
 
-def get_title_from_pdf(path_files):
-    """This function uses PyPDF2 library to extract the paper title. 
 
-    :param path_files: pdf file location
-    :type path_files: str
+
+def get_title_from_pdf(pdf_file):
+    
+    """This function uses PyPDF2 library to extract the paper title. This function is 
+    developed just in case the publication metadata is not extractable from crossref.
+
+    :param pdf_files: pdf file binary
+    :type path_files: binary file content
     :return: paper title
     :rtype: str
     """
-    pdf_in = open(path_files,'rb')
-    pdf_file = PyPDF2.PdfFileReader(pdf_in)
+    #pdf_in = open(path_files,'rb') #if the file is stored on local drive
+    pdf_file = PyPDF2.PdfFileReader(pdf_file)
     if pdf_file.getOutlines() == []: 
         paper_title = pdf_file.getDocumentInfo()["/Title"] 
     else:
         paper_title = pdf_file.getOutlines()[0]["/Title"]
     
-    pdf_in.close()
     return paper_title
 
-def get_doi(path_files):
+
+
+def get_doi(pdf_file):
 
     """This function finds publication DOI from a PDF's first or second page using regex
     
-    :param path_files: path to the pdf file
-    :type path_files: str
+    :param pdf_file: pdf file content
+    :type pdf_file: binary
     :return: DOI
     :rtype: str
     """
 
-    from pdfminer import high_level
-
-    local_pdf_filename = path_files
-    pages = [0,1] # just the first page
-
-    text = high_level.extract_text(local_pdf_filename, "", pages)
+    #local_pdf_filename = path_files
+    pages = [0,1] # just the first and second pages
+    #get the text
+    text = high_level.extract_text(pdf_file, "", pages)
+    # regular expression
     doi_re = re.compile("/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\>\"\<)])+")
-    #doi_re = re.compile("10.(\d)+/([^(\s\>\"\<)])+")
-    
-    #pdf_in = open(path_files,'rb')
-    #pdf_file = PyPDF2.PdfFileReader(pdf_in)
-    #text = pdf_file.getPage(0).extractText()
+    #search re in the text
     m = doi_re.search(text)
-    #print( text)
-    #pdf_in.close()
+
     if m is None:
         m="DOI not found!"
     else:
         m = m.group(0)
     
     return m
+
+
+
 def get_pubData(doi):
-    """A function to resolve doi form crossref database
+    
+    """A function to resolve doi from crossref database
 
     :param doi: DOI of a publication
     :type doi: str

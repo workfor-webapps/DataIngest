@@ -11,3 +11,4 @@ temp.pdf
 .gcloudignore
 table.csv
 table.xlsx
+test/*

@@ -13,6 +13,7 @@ pdfminer.six
 crossref-commons
 sphinx
 sphinx-rtd-theme
+requests
 
 
 

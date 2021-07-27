@@ -1,0 +1,4 @@
+cron:
+- description: "Extract files and extract tables"
+  url: /extract
+  schedule: every 5 minutes
