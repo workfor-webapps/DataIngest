@@ -2,7 +2,7 @@
     a personal google account (needs to be changed to server maybe?). 
 """
 
-from src.drive_functions import get_files
+from src.drive_functions import get_new_files
 from src.Pdf_table_extr import PubData, extract_tables, get_doi, get_title_from_pdf
 #from google.cloud import datastore
 from flask import Flask, render_template, request, redirect, g, flash, url_for, session, jsonify
@@ -131,7 +131,7 @@ def oauth2callback():
  	
     credentials = flow.credentials
     print(credentials)
-    #store_cred(credentials_to_dict(credentials))
+    store_cred(credentials_to_dict(credentials))
 
     session['credentials'] = credentials_to_dict(credentials)
     return redirect(url_for('list'))
@@ -177,7 +177,9 @@ def PullTable():
 def extract():
     
        
-    #credential = get_cred()
+    credential = get_cred()
+    session['credentials'] = credentials_to_dict(credential)
+
     #print(credential)
     if 'credentials' not in session:
         return redirect('authorize')
@@ -185,12 +187,18 @@ def extract():
     # Load credentials from the session.
     credentials = google.oauth2.credentials.Credentials(
         **session['credentials'])
+    
+    # Save credentials back to session in case access token was refreshed.
+    # ACTION ITEM: In a production app, you likely want to save these
+    #              credentials in a persistent database instead.
+    store_cred (credentials_to_dict(credentials))
+    session['credentials'] = credentials_to_dict(credentials)
 
     drive = googleapiclient.discovery.build(
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
     #get files metadata in PDEA folder on google drive
-    file_items = get_files(drive)
+    file_items = get_new_files(drive)
     
     #initialize files dict
     files_data = dict.fromkeys(['name', 'doi', 'status'])
@@ -219,11 +227,7 @@ def extract():
     files_data["status"] = file_status
     #df = tabula.read_pdf(files[0]["webContentLink"], pages='all')
     #print(df[0])
-    # Save credentials back to session in case access token was refreshed.
-    # ACTION ITEM: In a production app, you likely want to save these
-    #              credentials in a persistent database instead.
-    #store_cred (credentials_to_dict(credentials))
-    session['credentials'] = credentials_to_dict(credentials)
+
 
 
 @app.route('/status_update')
