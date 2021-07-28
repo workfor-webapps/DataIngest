@@ -2,16 +2,19 @@
     a personal google account (needs to be changed to server maybe?). 
 """
 
-from src.drive_functions import get_new_files, get_NoDOI_folder_id, move_file, get_archive_folder_id
+from src.drive_functions import get_New_folder_id, get_files, get_NoDOI_folder_id, get_logs_id, move_file, \
+                                get_archive_folder_id, save_files, get_Images_folder_id, get_JsonTables_folder_id, get_logs_id
+
 from src.Pdf_table_extr import PubData, extract_tables, get_doi, get_title_from_pdf
 #from google.cloud import datastore
 from flask import Flask, render_template, request, redirect, g, flash, url_for, session, jsonify
-import os, sys, io
-import pickle
+import os, sys, io, json
+import pickle, PyPDF2, tabula
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+import datetime
 #from google.cloud import datastore
 
 CLIENT_SECRETS_FILE = "client_secret.json"
@@ -81,7 +84,9 @@ def index():
 
     else:
 
-        return render_template('index.html',pdf_list=[])
+        files_data = dict.fromkeys(['name', 'doi', 'pages', 'url', 'tables', 'status'])
+
+        return render_template('index.html', files_data=files_data,file_numbers = 1)
     
 
 
@@ -198,11 +203,138 @@ def extract():
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
     #get files metadata in PDEA folder on google drive
-    file_items = get_new_files(drive)
+    folder_id = get_New_folder_id(drive)
+    file_items = get_files(drive, folder_id)
     
     #initialize files dict
-    #files_data = dict.fromkeys(['name', 'doi', 'status'])
+    files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
+    files_log = dict.fromkeys(['name', 'doi', 'status'])
 
+    #file_name = []
+    #file_doi = []
+    #file_status = []
+    if not file_items:
+        return 'No new file', 200
+
+    for file in file_items:
+        
+        files_data["url"] = file["webViewLink"]
+        files_data["name"] = file["name"]
+        files_log["name"] = file["name"]
+        #1. download the file 
+        request = drive.files().get_media(fileId=file["id"])
+
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+
+        fh.seek(0)
+        
+        while done is False:
+            status, done = downloader.next_chunk()
+            #print ("Download: %", int(status.progress() * 100))
+
+        doi = get_doi(fh)
+        files_data["doi"] = doi
+        files_log["doi"] = doi
+        
+        if doi == "DOI not found!": # move to "nodoi" folder"
+            file_id = file["id"]
+            folder_id = get_NoDOI_folder_id(drive)
+            move_file(service=drive, file_id=file_id,folder_id=folder_id)
+            files_log["status"] = "Failed"
+        else:
+            state = store_doi(doi)
+            
+            if state == "Old":
+                file_id = file["id"]
+                folder_id = get_archive_folder_id(drive)
+                move_file(service=drive, file_id=file_id,folder_id=folder_id)
+                files_data["status"] = "Duplicate"
+                files_log["status"] = "Duplicated"
+            else:
+                # here extract and save table data
+                file_url = file["webContentLink"]
+                tables, pages = extract_tables(fh)
+                files_data["tables"] = tables
+                files_data["pages"] = pages
+                files_data["status"] = "Ready"
+                files_log["status"] = "Ready"
+
+
+                folder_id = get_archive_folder_id(drive)
+                move_file(service=drive, file_id=file_id,folder_id=folder_id)
+
+
+
+
+
+    # convert logs into JSON:
+    data = json.dumps(files_log)
+    folderId = get_logs_id(drive)
+
+    #test_dic =  {"name": "FOAD", "id":123}
+
+    #json_byte = json.dumps(test_dic)
+
+    json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+    name = datetime.datetime.now().strftime("%Y%m%d%H")
+    save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+
+    # convert tables into JSON:
+    data = json.dumps(files_data)
+    folderId = get_JsonTables_folder_id(drive)
+
+    json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+    name = datetime.datetime.now().strftime("%Y%m%d%H") 
+    save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+
+    fh.flush()
+
+        
+
+    return 'Sucesss', 200
+
+
+@app.route('/status_update')
+def list():
+
+    #credential = get_cred()
+    #session['credentials'] = credentials_to_dict(credential)
+
+    #print(credential)
+    if 'credentials' not in session:
+        return redirect('authorize')
+
+    # Load credentials from the session.
+    credentials = google.oauth2.credentials.Credentials(
+        **session['credentials'])
+    
+    # Save credentials back to session in case access token was refreshed.
+    # ACTION ITEM: In a production app, you likely want to save these
+    #              credentials in a persistent database instead.
+    #store_cred (credentials_to_dict(credentials))
+    session['credentials'] = credentials_to_dict(credentials)
+
+    drive = googleapiclient.discovery.build(
+        API_SERVICE_NAME, API_VERSION, credentials=credentials)
+    
+     #get files metadata in PDEA folder on google drive
+    file_items = get_files(drive, get_Images_folder_id(drive))
+    
+    #initialize files dict
+    files_data = dict.fromkeys(['name', 'doi', 'pages', 'url', 'tables', 'status'])
+    request = drive.files().get_media(fileId=file_items[0]["id"])
+
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+            status, done = downloader.next_chunk()
+            #print ("Download: %", int(status.progress() * 100))
+    fh.seek(0)
+    pdf = json.load(fh)
+    """
     #file_name = []
     #file_doi = []
     #file_status = []
@@ -222,39 +354,31 @@ def extract():
             #print ("Download: %", int(status.progress() * 100))
 
         doi = get_doi(fh)
-
-        if doi == "DOI not found!": # move to "nodoi" folder"
-            file_id = file["id"]
-            folder_id = get_NoDOI_folder_id(drive)
-            move_file(service=drive, file_id=file_id,folder_id=folder_id)
-        else:
-            state = store_doi(doi)
-            
-            if state == "Old":
-                file_id = file["id"]
-                folder_id = get_archive_folder_id(drive)
-                move_file(service=drive, file_id=file_id,folder_id=folder_id)
-            else:
-                # here extract and save table data
-                pass
-
-
-
-
+        pdf_writer = PyPDF2.PdfFileWriter()
+        pdf_file = PyPDF2.PdfFileReader(fh)
+        pdf_page = pdf_file.getPage(20)
+        pdf_page.rotateClockwise(90)
+        pdf_writer.addPage(pdf_page)
         
+        pdf_bytes = io.BytesIO()
+        
+        pdf_writer.write(pdf_bytes)
+        pdf_bytes.seek(0)
+        tables = tabula.read_pdf(pdf_bytes, multiple_tables=True, pages="all") # finding tables using tabula 
+        print (tables)
+    folderId = get_Images_folder_id(drive)
 
+    #test_dic =  {"name": "FOAD", "id":123}
 
-    #df = tabula.read_pdf(files[0]["webContentLink"], pages='all')
-    #print(df[0])
-    return 'Sucesss', 200
+    #json_byte = json.dumps(test_dic)
 
+    #json_byte = io.BytesIO(bytes(json_byte, encoding='utf8'))
 
-@app.route('/status_update')
-def list():
+    save_files(service=drive, data=json_byte, name="test", folderId=folderId, mimetype="application/json")
+    files_data = dict.fromkeys(['name', 'doi', 'pages', 'url', 'tables', 'status'])"""
+    print(pdf["name"])
 
-
-
-    return render_template('index.html', files_data=files_data, file_numbers = len(file_items))
+    return render_template('index.html', files_data=files_data, file_numbers = 1)
     
 
 
@@ -312,7 +436,7 @@ def store_cred(credentials):
 
     datastore_client.put(entity)
 
-def store_doi(doi, url):
+def store_doi(doi):
     datastore_client = datastore.Client(project="metadata-pdea")
     
     #check if doi already exist
@@ -329,8 +453,6 @@ def store_doi(doi, url):
         entity.update(
             {
                 "doi": doi,
-                "url": url,
-                "status": status,
             }
         )
         

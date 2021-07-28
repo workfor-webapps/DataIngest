@@ -5,7 +5,7 @@
     :return: Publication info and extracted table data
     :rtype: datasets
 """
-import os
+import os, io
 import sys
 import tabula
 import PyPDF2
@@ -154,14 +154,15 @@ class PubData:
     
 
 #*******************************************************************************************
-def extract_tables(path_files):
+def extract_tables(fh):
 
-    pdf_in = open(path_files,'rb')
+    pdf_in = fh #open(path_files,'rb')
     pdf_file = PyPDF2.PdfFileReader(pdf_in)
     pages = pdf_file.numPages 
-    file_p = path_files
+    file_p = fh# path_files
     #initialize table-clean
     table_clean = []
+    table_pages = []
     #******************************************************************
     #******************** Looping over pages for each PDF file ********
     #loop over pages
@@ -170,26 +171,8 @@ def extract_tables(path_files):
         #***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0********
         #************************************************************************************************************
 
-        #check if the page is rotated - first check/attempt to fix rotated pages
-        if (pdf_file.getPage(pg).get('/Rotate') != None and (pdf_file.getPage(pg).get('/Rotate')) != 0):
-            pdf_writer = PyPDF2.PdfFileWriter()
 
-            pdf_page = pdf_file.getPage(pg)
-            pdf_page.rotateClockwise(90)  # rotate Clockwise()
-            pdf_writer.addPage(pdf_page)
-
-            #path to rotated directory- gets created if not there
-            path_rot = os.getcwd() + "/RotatedPages/"
-            isExist = os.path.exists(path)
-            if (not isExist): 
-                os.mkdir(path_rot)
-            file_ext = 'Rot_{}_P_{}.pdf'.format("temp",str(pg))
-            with open(file_ext, 'wb') as pdf_page_rotated:
-                pdf_writer.write(pdf_page_rotated)
-            tables = tabula.read_pdf(file_ext, multiple_tables=True, pages="1") # finding tables using tabula    
-            shutil.move (os.getcwd() + "/" + file_ext, path_rot + file_ext)
-        else:
-            tables = tabula.read_pdf(file_p, multiple_tables=True, pages=str(pg+1)) # finding tables using tabula
+        tables = tabula.read_pdf(file_p, multiple_tables=True, pages=str(pg+1)) # finding tables using tabula
         
         #cleaning tables
         i = 0
@@ -248,18 +231,12 @@ def extract_tables(path_files):
                 if z==1 : pdf_page.scaleBy(0.5)         # scale 
                 pdf_writer.addPage(pdf_page)
 
-                #path to rotated directory- gets created if not there
-                path_rot = os.getcwd() + "/RotatedPages/"
-                isExist = os.path.exists(path)
-                if (not isExist): 
-                    os.mkdir(path_rot)
-                file_ext = 'Rot_{}_P_{}.pdf'.format("temp",str(pg))
-                with open(file_ext, 'wb') as pdf_page_rotated:
-                    pdf_writer.write(pdf_page_rotated)
-                tables = tabula.read_pdf(file_ext, multiple_tables=True, pages="1") # finding tables using tabula  
+                pdf_bytes = io.BytesIO()
+                pdf_writer.write(pdf_bytes)
+                
+                tables = tabula.read_pdf(pdf_bytes, multiple_tables=True, pages="all") # finding tables using tabula  
 
-                shutil.move (os.getcwd() + "/" + file_ext, path_rot + file_ext)
-
+                #shutil.move (os.getcwd() + "/" + file_ext, path_rot + file_ext)
                 z+=1
                 i = 0
                 j = len(tables)
@@ -267,6 +244,7 @@ def extract_tables(path_files):
 
             #add to table clean
             table_clean.append(df)
+            table_pages.append(pg+1)
             i+=1
     #************************************* end of pages loop*********************************************
 
@@ -311,7 +289,7 @@ def extract_tables(path_files):
                     print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
         table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
     
-    return table_clean
+    return table_clean, table_pages
 
 def write_to_excel(writer, jj, paper_title, table_clean):
         # Saving data to an excel sheet
@@ -398,10 +376,10 @@ if __name__ == '__main__':
         print ("No file to process!")
         sys.exit()
 
-    #writer = excel_init()
+    writer = excel_init()
 
     #jj = 1 # this is for sheet names in excel writer
-    temp_file = path+"temp.pdf"
+    temp_file = path+"B.pdf"
 
     #time_modified = os.path.getmtime(temp_file)
     doi = get_doi(temp_file)
@@ -414,6 +392,7 @@ if __name__ == '__main__':
     #print("Title= ", x.title)
 
     #print(paper_title)
-    #table_clean = extract_tables(temp_file)
+    table_clean = extract_tables(temp_file)
     #write_to_excel(writer, jj, paper_title, table_clean)
     #jj += 1
+    print(table_clean[0])
