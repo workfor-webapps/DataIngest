@@ -33,10 +33,11 @@ def save_files(service, data, name, folderId, mimetype ):
     #fh = bytes (data)#, encoding='utf8')
     #fd = BytesIO(data)
     media = MediaIoBaseUpload(data, mimetype=mimetype, chunksize=1024*1024, resumable=True)
-    file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    file = service.files().create(body=file_metadata, media_body=media, fields='id, webViewLink').execute()
     #print("File created, id:", file.get("id"))
     fileId = file.get("id")
-    return fileId
+    fileUrl = file.get("webViewLink")
+    return fileId, fileUrl
 
 def get_archive_folder_id(service):
     
@@ -88,7 +89,7 @@ def get_New_folder_id(service):
     id = folderIdResult[0].get('id')
     return id
 
-def get_logs_id(service):
+def get_logs_folder_id(service):
     
     # First, get the folder ID by querying by mimeType and name
     folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'logs'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
@@ -110,7 +111,8 @@ def get_files(service, folder_id):
 
     # Now, using the folder ID gotten above, we get all the files from
     # that particular folder
-    results = service.files().list(q = "'" + id + "' in parents", pageSize=10, fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime, webContentLink, webViewLink )").execute()
+    results = service.files().list(q = "'" + id + "' in parents", orderBy = "createdTime desc", pageSize=10, fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime, webContentLink, webViewLink )").execute()
+
     items = results.get('files', [])
     return items
 

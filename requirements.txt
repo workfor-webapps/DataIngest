@@ -14,7 +14,7 @@ crossref-commons
 sphinx
 sphinx-rtd-theme
 requests
-
+json2html
 
 
 

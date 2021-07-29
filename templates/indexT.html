@@ -10,15 +10,15 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-4">
-                <strong>{{title}}</strong>
+                <strong>{{pub[0]["title"]}}</strong>
                 <br>
                 <br>
 
-                <p>Lacerenza CN, Reyes DL, Marlow SL, Joseph DL, Salas E.</p>
+                <p>{{pub[0]["authors"]}}</p>
 
-                <p><i>J Appl Psychol. 2017 Dec;102(12):1686-1718.</i></p>
+                <p><i>{{pub[0]["jur"]}}</i></p>
 
-                <a href="https://doi.org/{{DOI}}">doi: {{DOI}} </a><img src="../static/link-256.webp" width="15">
+                <a href="https://doi.org/{{DOI}}">doi: {{pub[0]["doi"]}} </a><img src="../static/link-256.webp" width="15">
                 <br>
                 <br>
                 <a href="/showPDF">Open PDF </a><img src="../static/link-256.webp" width="15">
@@ -144,13 +144,10 @@
                 
                 <div class="row">
                 
-                {% if table_num==1 %}
-                {%include 'table_temp.html'%}
-                {% endif  %}
 
-                {%if table_num==2 %}
-                {%   include 'table_temp1.html' %}
-                {% endif  %}
+               
+                    {{table_html | safe}}                               
+                
                 
 
                 </div>

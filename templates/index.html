@@ -41,14 +41,14 @@
                 </thead>
                 <tbody>
                 {% for i in range(file_numbers) %}    
-                    {% if files_data["status"][i] == "Complete" %} 
+                    {% if files_data[i]["status"] == "Complete" %} 
                      <tr class="success">
                     {%else %}
                     <tr class="info">
                     {% endif %}
-                    <td style="font-size: medium;">{{files_data["name"][i]}}</td>
-                    <td style="font-size: medium;"> {{files_data["doi"][i]}}</td>
-                    <td style="font-size: medium;"> {{files_data["status"][i]}}</td>
+                    <td style="font-size: medium;">{{files_data[i]["name"]}}</td>
+                    <td style="font-size: medium;"> {{files_data[i]["doi"]}}</td>
+                    <td style="font-size: medium;"> {{files_data[i]["status"]}}</td>
                   </tr>      
                 {% endfor %}
                 </tbody>

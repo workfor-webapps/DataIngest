@@ -1,21 +1,23 @@
 """Main python file for flask application. This app uses google drive api to read and write data from
     a personal google account (needs to be changed to server maybe?). 
 """
+import mock
+from werkzeug.utils import html
+from src.drive_functions import get_New_folder_id, get_files, get_NoDOI_folder_id, get_logs_folder_id, move_file, \
+                                get_archive_folder_id, save_files, get_Images_folder_id, get_JsonTables_folder_id
 
-from src.drive_functions import get_New_folder_id, get_files, get_NoDOI_folder_id, get_logs_id, move_file, \
-                                get_archive_folder_id, save_files, get_Images_folder_id, get_JsonTables_folder_id, get_logs_id
-
-from src.Pdf_table_extr import PubData, extract_tables, get_doi, get_title_from_pdf
+from src.Pdf_table_extr import PubData, extract_tables, get_doi
 #from google.cloud import datastore
-from flask import Flask, render_template, request, redirect, g, flash, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, g, flash, url_for, session, jsonify, render_template_string
 import os, sys, io, json
 import pickle, PyPDF2, tabula
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
-from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 import datetime
-#from google.cloud import datastore
+from google.cloud import datastore
+from json2html import *
 
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES  = ['https://www.googleapis.com/auth/drive']
@@ -84,9 +86,10 @@ def index():
 
     else:
 
-        files_data = dict.fromkeys(['name', 'doi', 'pages', 'url', 'tables', 'status'])
+        files_data = dict.fromkeys(['name', 'doi', 'status'])
+        files = [files_data]
 
-        return render_template('index.html', files_data=files_data,file_numbers = 1)
+        return render_template('index.html', files_data=files,file_numbers = 1)
     
 
 
@@ -143,47 +146,70 @@ def oauth2callback():
 
 @app.route('/PullTables')  #  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names
 def PullTable():
-    """
 
-    service = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
-    files = get_files(service)
-    file1 = files[0]
-    file_id = file1["id"]
-    get_temp_pdf(service, file_id)
-    # path = os.getcwd() + "/temp/"
-    temp_file = "/tmp/temp.pdf"
-    paper_title = get_title(temp_file)
-    doi = get_doi(temp_file)
 
-    table_clean = extract_tables(temp_file)
-    df = table_clean[1]
-#
-#     #-----------------Get json for table-------------
-    #data = df.to_json(orient='table')
-#     #------------------------------------------------
-#
-    html_file = df.to_html(index=False, justify="left", na_rep="", classes="table table-light table-striped table-hover table-bordered table-responsive-lg", table_id="pdf")
-    text_file = open("./templates/table_temp1.html", "w")
-    header = "{% extends 'table_base.html' %}\n{% block body %}"
-    text_file.write(header)
-    text_file.write(html_file)
-    footer = "{% endblock %}"
-    text_file.write(footer)
-    text_file.close()"""
-    paper_title = "Leadership Training Design, Delivery, and Implementation: A Meta-Analysis"
-    doi = "10.1037/apl0000241"
-    #paths = os.getcwd() + "/src/temp/Capture.PNG"
-    table_num = request.args.get('table', default = 1, type = int)
+    # html_file = df.to_html(index=False, justify="left", na_rep="", classes="table table-light table-striped table-hover table-bordered table-responsive-lg", table_id="pdf")
+    # text_file = open("./templates/table_temp1.html", "w")
+    header = "{% extends 'table_base.html' %}\n{% block body %}\n"
+    # text_file.write(header)
+    # text_file.write(html_file)
+    footer = "\n{% endblock %}"
+    # text_file.write(footer)
+    # text_file.close()
+    # paper_title = "Leadership Training Design, Delivery, and Implementation: A Meta-Analysis"
+    # doi = "10.1037/apl0000241"
+    # #paths = os.getcwd() + "/src/temp/Capture.PNG"
+        #print(credential)
+    if 'credentials' not in session:
+        return redirect('authorize')
+
+    # Load credentials from the session.
+    credentials = google.oauth2.credentials.Credentials(
+        **session['credentials'])
     
-    return render_template('indexT.html',table_num =table_num,  title=paper_title, DOI=doi)
+    # Save credentials back to session in case access token was refreshed.
+    # ACTION ITEM: In a production app, you likely want to save these
+    #              credentials in a persistent database instead.
+    #store_cred (credentials_to_dict(credentials))
+    session['credentials'] = credentials_to_dict(credentials)
+
+    drive = googleapiclient.discovery.build(
+        API_SERVICE_NAME, API_VERSION, credentials=credentials)
+    
+     #get files metadata in PDEA folder on google drive
+    file_items = get_files(drive, get_JsonTables_folder_id(drive))  
+
+    request = drive.files().get_media(fileId=file_items[0]["id"])
+
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+            status, done = downloader.next_chunk()
+            #print ("Download: %", int(status.progress() * 100))
+    fh.seek(0)
+    Extracted_data = json.load(fh)
+    pub = []
+    for data in Extracted_data:
+        pub.append(PubData(data["doi"]))
+        
+
+    table_html = Extracted_data[0]["tables"][0] 
+    table_html = header + table_html + footer  
+    #html_table = io.StringIO(table_html)
+    #html_table.seek(0)
+    #print(table_html)
+    #table_num = request.args.get('table', default = 1, type = int)
+    x=  render_template_string(table_html)
+    return render_template('indexT.html',table_num =1, tables = Extracted_data, table_html= x , pub = pub)
 
 
 @app.route('/extract')
 def extract():
     
     
-    credential = get_cred()
-    session['credentials'] = credentials_to_dict(credential)
+    #credential = get_cred()
+    #session['credentials'] = credentials_to_dict(credential)
 
     #print(credential)
     if 'credentials' not in session:
@@ -196,7 +222,7 @@ def extract():
     # Save credentials back to session in case access token was refreshed.
     # ACTION ITEM: In a production app, you likely want to save these
     #              credentials in a persistent database instead.
-    store_cred (credentials_to_dict(credentials))
+    #store_cred (credentials_to_dict(credentials))
     session['credentials'] = credentials_to_dict(credentials)
 
     drive = googleapiclient.discovery.build(
@@ -206,19 +232,21 @@ def extract():
     folder_id = get_New_folder_id(drive)
     file_items = get_files(drive, folder_id)
     
-    #initialize files dict
-    files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
-    files_log = dict.fromkeys(['name', 'doi', 'status'])
+    log_file = []
+    data_file = []
 
-    #file_name = []
-    #file_doi = []
-    #file_status = []
+    #initialize files dict
+    #files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
+    #files_log = dict.fromkeys(['name', 'doi', 'status'])
+
     if not file_items:
         return 'No new file', 200
 
     for file in file_items:
+        files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
+        files_log = dict.fromkeys(['name', 'doi', 'status'])
         
-        files_data["url"] = file["webViewLink"]
+        files_data["PDF_url"] = file["webViewLink"]
         files_data["name"] = file["name"]
         files_log["name"] = file["name"]
         #1. download the file 
@@ -228,12 +256,12 @@ def extract():
         downloader = MediaIoBaseDownload(fh, request)
         done = False
 
-        fh.seek(0)
+        
         
         while done is False:
             status, done = downloader.next_chunk()
             #print ("Download: %", int(status.progress() * 100))
-
+        fh.seek(0)
         doi = get_doi(fh)
         files_data["doi"] = doi
         files_log["doi"] = doi
@@ -244,7 +272,8 @@ def extract():
             move_file(service=drive, file_id=file_id,folder_id=folder_id)
             files_log["status"] = "Failed"
         else:
-            state = store_doi(doi)
+            #state = store_doi(doi)
+            state = "New"
             
             if state == "Old":
                 file_id = file["id"]
@@ -254,44 +283,53 @@ def extract():
                 files_log["status"] = "Duplicated"
             else:
                 # here extract and save table data
-                file_url = file["webContentLink"]
                 tables, pages = extract_tables(fh)
                 files_data["tables"] = tables
                 files_data["pages"] = pages
                 files_data["status"] = "Ready"
                 files_log["status"] = "Ready"
 
+                # get and save pages
+                pages_url = []
+                for page in pages:
+                    pdf_file = PyPDF2.PdfFileReader(fh)
+                    pdf_page = pdf_file.getPage(page-1)
+                    pdf_writer = PyPDF2.PdfFileWriter()
+                    pdf_writer.addPage(pdf_page)
+                    pdf_page_bytes = io.BytesIO()
+                    pdf_writer.write(pdf_page_bytes)
+
+                    #save pdf pages to images folder
+                    folderId = get_Images_folder_id(drive)
+                    P_id, P_url = save_files(service=drive, data=pdf_page_bytes, name=doi+str(page), folderId= folderId, mimetype = "application/pdf" )
+                    pages_url.append(P_url)
+                
+                files_data["pages_urls"] = pages_url
 
                 folder_id = get_archive_folder_id(drive)
-                move_file(service=drive, file_id=file_id,folder_id=folder_id)
+                move_file(service=drive, file_id=file["id"],folder_id=folder_id)
 
 
-
+        #saveing log and table dat for all files in a batch
+        log_file.append(files_log)
+        data_file.append(files_data)
 
 
     # convert logs into JSON:
-    data = json.dumps(files_log)
-    folderId = get_logs_id(drive)
-
-    #test_dic =  {"name": "FOAD", "id":123}
-
-    #json_byte = json.dumps(test_dic)
-
+    data = json.dumps(log_file)
+    folderId = get_logs_folder_id(drive)
     json_byte = io.BytesIO(bytes(data, encoding='utf8'))
     name = datetime.datetime.now().strftime("%Y%m%d%H")
     save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
     # convert tables into JSON:
-    data = json.dumps(files_data)
+    data = json.dumps(data_file)
     folderId = get_JsonTables_folder_id(drive)
-
     json_byte = io.BytesIO(bytes(data, encoding='utf8'))
     name = datetime.datetime.now().strftime("%Y%m%d%H") 
     save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
-    fh.flush()
-
-        
+    fh.flush()  
 
     return 'Sucesss', 200
 
@@ -320,10 +358,9 @@ def list():
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
     
      #get files metadata in PDEA folder on google drive
-    file_items = get_files(drive, get_Images_folder_id(drive))
+    file_items = get_files(drive, get_logs_folder_id(drive))
     
-    #initialize files dict
-    files_data = dict.fromkeys(['name', 'doi', 'pages', 'url', 'tables', 'status'])
+
     request = drive.files().get_media(fileId=file_items[0]["id"])
 
     fh = io.BytesIO()
@@ -333,52 +370,13 @@ def list():
             status, done = downloader.next_chunk()
             #print ("Download: %", int(status.progress() * 100))
     fh.seek(0)
-    pdf = json.load(fh)
-    """
-    #file_name = []
-    #file_doi = []
-    #file_status = []
-    if not file_items:
-        return 'No new file', 200
+    logs = json.load(fh)
+    print(logs)
+    print(file_items[0]["name"])
+    file_num = len(logs)
+    fh.flush()
 
-    for file in file_items:
-        #1. download the file 
-        request = drive.files().get_media(fileId=file["id"])
-
-        fh = io.BytesIO()
-        downloader = MediaIoBaseDownload(fh, request)
-        done = False
-        
-        while done is False:
-            status, done = downloader.next_chunk()
-            #print ("Download: %", int(status.progress() * 100))
-
-        doi = get_doi(fh)
-        pdf_writer = PyPDF2.PdfFileWriter()
-        pdf_file = PyPDF2.PdfFileReader(fh)
-        pdf_page = pdf_file.getPage(20)
-        pdf_page.rotateClockwise(90)
-        pdf_writer.addPage(pdf_page)
-        
-        pdf_bytes = io.BytesIO()
-        
-        pdf_writer.write(pdf_bytes)
-        pdf_bytes.seek(0)
-        tables = tabula.read_pdf(pdf_bytes, multiple_tables=True, pages="all") # finding tables using tabula 
-        print (tables)
-    folderId = get_Images_folder_id(drive)
-
-    #test_dic =  {"name": "FOAD", "id":123}
-
-    #json_byte = json.dumps(test_dic)
-
-    #json_byte = io.BytesIO(bytes(json_byte, encoding='utf8'))
-
-    save_files(service=drive, data=json_byte, name="test", folderId=folderId, mimetype="application/json")
-    files_data = dict.fromkeys(['name', 'doi', 'pages', 'url', 'tables', 'status'])"""
-    print(pdf["name"])
-
-    return render_template('index.html', files_data=files_data, file_numbers = 1)
+    return render_template('index.html', files_data=logs, file_numbers = file_num)
     
 
 
@@ -421,7 +419,9 @@ def showPDF():
 
 
 def store_cred(credentials):
-    datastore_client = datastore.Client(project="metadata-pdea")
+    db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
+    #db = ndb.Client(project="test", credentials=credentials)
+    datastore_client = datastore.Client(project="metadata-pdea", credentials=db_credentials)
     kind = 'drive_cred'
     id = 5644004762845184 
     key = datastore_client.key(kind, id)
@@ -437,8 +437,10 @@ def store_cred(credentials):
     datastore_client.put(entity)
 
 def store_doi(doi):
-    datastore_client = datastore.Client(project="metadata-pdea")
-    
+    #datastore_client = datastore.Client(project="metadata-pdea")
+    db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
+    #db = ndb.Client(project="test", credentials=credentials)
+    datastore_client = datastore.Client(project="metadata-pdea", credentials=db_credentials)
     #check if doi already exist
     query = datastore_client.query(kind="files")
     query.add_filter("doi", "=", doi)
@@ -467,7 +469,10 @@ def store_doi(doi):
 
 
 def get_cred():
-    datastore_client = datastore.Client(project="metadata-pdea")
+    #datastore_client = datastore.Client(project="metadata-pdea")
+    db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
+    #db = ndb.Client(project="test", credentials=credentials)
+    datastore_client = datastore.Client(project="metadata-pdea", credentials=db_credentials)
     kind = 'drive_cred'
     id = 5644004762845184 
     key = datastore_client.key(kind, id)
@@ -486,4 +491,4 @@ def credentials_to_dict(credentials):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=8888)
+    app.run(debug=True, host='localhost', port=8080)

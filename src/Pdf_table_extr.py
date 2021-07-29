@@ -125,6 +125,7 @@ class PubData:
     authors = ""
     jur = ""
     pub_year = 0
+    doi = ""
     status = True
 
     def __init__(self, doi) -> None:
@@ -133,6 +134,7 @@ class PubData:
         :param doi: doi
         :type doi: str
         """
+        self.doi = doi
         try:
             self.data = crossref_commons.retrieval.get_publication_as_json(doi)
         except ValueError: #DOI could not be resulved
@@ -171,7 +173,7 @@ def extract_tables(fh):
         #***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0********
         #************************************************************************************************************
 
-
+        file_p.seek(0)
         tables = tabula.read_pdf(file_p, multiple_tables=True, pages=str(pg+1)) # finding tables using tabula
         
         #cleaning tables
@@ -233,9 +235,11 @@ def extract_tables(fh):
 
                 pdf_bytes = io.BytesIO()
                 pdf_writer.write(pdf_bytes)
+                pdf_bytes.seek(0)
                 
                 tables = tabula.read_pdf(pdf_bytes, multiple_tables=True, pages="all") # finding tables using tabula  
 
+                pdf_bytes.flush()
                 #shutil.move (os.getcwd() + "/" + file_ext, path_rot + file_ext)
                 z+=1
                 i = 0
@@ -288,6 +292,11 @@ def extract_tables(fh):
                 except:
                     print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
         table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+
+        #convert dataframes to json objects
+        #table_clean[num] = table_clean[num].to_json(orient='table')
+        table_clean[num] = table_clean[num].to_html(index=False, justify="left", na_rep="",\
+                             classes="table table-light table-striped table-hover table-bordered table-responsive-lg", table_id="pdf")
     
     return table_clean, table_pages
 
