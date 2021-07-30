@@ -33,14 +33,27 @@ function html2json() {
 
   // reload page
   var url = window.location.href;    
-  if (url.indexOf('?') > -1){
-      
-  }else{
-      url += '?table=2'
-  }
-  window.location.href = url;
-  return JSON.stringify(rows);
+  
+  var url2 = replaceUrlParam (url, 'table_num', 1);
+  
+  window.location.href = url2;
+  return 200;
 };
+
+function replaceUrlParam(url, paramName, paramValue)
+{
+    if (paramValue == null) {
+        paramValue = 0;
+    }
+    var value = GetURLParameter(paramName) + paramValue
+
+    var pattern = new RegExp('\\b('+paramName+'=).*?(&|#|$)');
+    if (url.search(pattern)>=0) {
+        return url.replace(pattern,'$1' + value + '$2');
+    }
+    url = url.replace(/[?#]$/,'');
+    return url + (url.indexOf('?')>0 ? '&' : '?') + paramName + '=' + value;
+}
 
 function GetURLParameter(sParam)
 {

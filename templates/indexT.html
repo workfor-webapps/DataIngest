@@ -10,15 +10,15 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-4">
-                <strong>{{pub[0]["title"]}}</strong>
+                <strong>{{pub_data["title"]}}</strong>
                 <br>
                 <br>
 
-                <p>{{pub[0]["authors"]}}</p>
+                <p>{{pub_data["authors"]}}</p>
 
-                <p><i>{{pub[0]["jur"]}}</i></p>
+                <p><i>{{pub_data["jur"]}}</i></p>
 
-                <a href="https://doi.org/{{DOI}}">doi: {{pub[0]["doi"]}} </a><img src="../static/link-256.webp" width="15">
+                <a href="https://doi.org/{{DOI}}">doi: {{pub_data["doi"]}} </a><img src="../static/link-256.webp" width="15">
                 <br>
                 <br>
                 <a href="/showPDF">Open PDF </a><img src="../static/link-256.webp" width="15">
@@ -115,7 +115,7 @@
                 </style>
                 <!-- <img id = "pageImage" class="img-fluid shadow-lg p-3 mb-5 bg-white" src='../static/capture.png'> -->
                 <div class="img-magnifier-container">
-                    <img id="pageImage" class="img-fluid shadow-lg p-3 mb-5 bg-white" src="../static/capture.png">
+                    <iframe width="750" height="900" src={{tables}}> </iframe> 
                 </div>
             </div>
 
@@ -144,10 +144,8 @@
                 
                 <div class="row">
                 
-
-               
+              
                     {{table_html | safe}}                               
-                
                 
 
                 </div>

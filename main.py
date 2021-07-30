@@ -9,7 +9,7 @@ from src.drive_functions import get_New_folder_id, get_files, get_NoDOI_folder_i
 from src.Pdf_table_extr import PubData, extract_tables, get_doi
 #from google.cloud import datastore
 from flask import Flask, render_template, request, redirect, g, flash, url_for, session, jsonify, render_template_string
-import os, sys, io, json
+import os, sys, io, json, re
 import pickle, PyPDF2, tabula
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
@@ -179,10 +179,10 @@ def PullTable():
      #get files metadata in PDEA folder on google drive
     file_items = get_files(drive, get_JsonTables_folder_id(drive))  
 
-    request = drive.files().get_media(fileId=file_items[0]["id"])
+    requested = drive.files().get_media(fileId=file_items[0]["id"])
 
     fh = io.BytesIO()
-    downloader = MediaIoBaseDownload(fh, request)
+    downloader = MediaIoBaseDownload(fh, requested)
     done = False
     while done is False:
             status, done = downloader.next_chunk()
@@ -194,14 +194,38 @@ def PullTable():
         pub.append(PubData(data["doi"]))
         
 
-    table_html = Extracted_data[0]["tables"][0] 
-    table_html = header + table_html + footer  
-    #html_table = io.StringIO(table_html)
+ 
+     #html_table = io.StringIO(table_html)
     #html_table.seek(0)
     #print(table_html)
     #table_num = request.args.get('table', default = 1, type = int)
-    x=  render_template_string(table_html)
-    return render_template('indexT.html',table_num =1, tables = Extracted_data, table_html= x , pub = pub)
+    
+    # args = request.args
+    # if "paper" in args:
+    #     paper = args.get("paper")
+    # else:
+    #     paper = 0
+    
+    # if "table_num" in args:
+    #     table_num = args.get("table_num")
+    # else:
+    #     table_num = 0
+    paper = request.args.get("paper" , default = 0, type = int)
+    table_num = request.args.get("table_num" , default = 0, type = int)
+
+
+    table_html = Extracted_data[paper]["tables"][table_num] 
+    table_html = header + table_html + footer 
+    rendered_table =  render_template_string(table_html)
+    page =  Extracted_data[paper]["pages_urls"][table_num]
+    page = re.sub("/view?.*", "/preview", page)
+
+    pub_data = pub[paper]
+
+
+
+    
+    return render_template('indexT.html',table_num =1, tables = page, table_html= rendered_table , pub_data = pub_data)
 
 
 @app.route('/extract')
@@ -302,6 +326,7 @@ def extract():
                     #save pdf pages to images folder
                     folderId = get_Images_folder_id(drive)
                     P_id, P_url = save_files(service=drive, data=pdf_page_bytes, name=doi+str(page), folderId= folderId, mimetype = "application/pdf" )
+                    P_url = re.sub("/view?*", "/preview", P_url)
                     pages_url.append(P_url)
                 
                 files_data["pages_urls"] = pages_url
