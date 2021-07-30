@@ -2,7 +2,7 @@
 function html2json() {
   var $table = $("table")
   rows = [],
-      header = [];
+  header = [];
 
   $table.find("thead th").each(function () {
       header.push($(this).html());
@@ -29,24 +29,38 @@ function html2json() {
   // send the collected data as JSON
   xhr.send(JSON.stringify(rows));
 
-  console.log(JSON.stringify(rows))
+  //console.log(JSON.stringify(rows))
 
   // reload page
+  var maxt = $('#my-data').data('value')
   var url = window.location.href;    
+  var url2 = replaceUrlParam (url, 'table_num', maxt);
   
-  var url2 = replaceUrlParam (url, 'table_num', 1);
+  
   
   window.location.href = url2;
   return 200;
 };
 
-function replaceUrlParam(url, paramName, paramValue)
+function replaceUrlParam(url, paramName, max_t)
 {
-    if (paramValue == null) {
-        paramValue = 0;
-    }
-    var value = GetURLParameter(paramName) + paramValue
 
+    var value = GetURLParameter(paramName);
+    
+     if (value == null) {
+        value = 0;
+      }
+    var value = parseInt(value, 10);
+    var value = value + 1;
+
+
+    if (value >= max_t) {
+
+      
+      url = replaceUrlParam (url, 'paper', 100);
+      var value = 0;
+    }
+ 
     var pattern = new RegExp('\\b('+paramName+'=).*?(&|#|$)');
     if (url.search(pattern)>=0) {
         return url.replace(pattern,'$1' + value + '$2');

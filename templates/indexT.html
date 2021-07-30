@@ -123,7 +123,7 @@
 
             <div class="col-7">
                 <div class="row">
-                    <div class="col-10">
+                    <div class="col-9">
                         <form class="form-inline" >
                             <label for="concept" class="mr-sm-2">CONCEPT CATEGORY :</label>
                             <input type="concept" class="form-control mb-2 mr-sm-2" placeholder="concept" id="concept">
@@ -133,9 +133,9 @@
                             <a class="btn btn-info btn-sm" onclick="ClearAll()">Clear all</a>
                         </form>  
                     </div>
-                    <div class="col-2">
+                    <div class="col-3">
                         <h4>
-                            <div style="text-align: right;">Table {{table_num}}/5</div>
+                            <div style="text-align: right;">Table {{table_num}}/{{max_tables}} </span></div>
                         </h4>
 
                         <br>
@@ -144,9 +144,7 @@
                 
                 <div class="row">
                 
-              
                     {{table_html | safe}}                               
-                
 
                 </div>
                <div class="row">
@@ -156,8 +154,11 @@
                     </div>
                     <div class="col-8">
                         <a class="btn btn-danger btn-lg" onclick="Ignore()">Ignore</a>
-                        
-                        <a class="btn btn-success btn-lg" onclick="html2json()">Accept</a>
+                                        
+                        <meta id="my-data" data-value="{{max_tables}}">
+
+                        <a class="btn btn-success btn-lg" onclick="html2json()"> Accept </a>
+
                     </div>
                 </div>
 
@@ -172,19 +173,13 @@
 <script src="/static/css/bootstable.js"></script>
 <script src="/static/css/script.js"></script>
 <script>
-//apply
+
 $("#pdf").SetEditable();
 function add_bott() {
         rowAddNewAndEdit('pdf');
   };
 
 
-</script>
-
-<script>
-    /* Initiate Magnify Function
-    with the id of the image, and the strength of the magnifier glass:*/
-    magnify("pageImage", 3);
 </script>
 
 

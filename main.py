@@ -3,6 +3,7 @@
 """
 import mock
 from werkzeug.utils import html
+from werkzeug.datastructures import ImmutableMultiDict
 from src.drive_functions import get_New_folder_id, get_files, get_NoDOI_folder_id, get_logs_folder_id, move_file, \
                                 get_archive_folder_id, save_files, get_Images_folder_id, get_JsonTables_folder_id
 
@@ -17,7 +18,7 @@ import googleapiclient.discovery
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 import datetime
 from google.cloud import datastore
-from json2html import *
+
 
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES  = ['https://www.googleapis.com/auth/drive']
@@ -149,19 +150,8 @@ def PullTable():
 
 
     # html_file = df.to_html(index=False, justify="left", na_rep="", classes="table table-light table-striped table-hover table-bordered table-responsive-lg", table_id="pdf")
-    # text_file = open("./templates/table_temp1.html", "w")
     header = "{% extends 'table_base.html' %}\n{% block body %}\n"
-    # text_file.write(header)
-    # text_file.write(html_file)
     footer = "\n{% endblock %}"
-    # text_file.write(footer)
-    # text_file.close()
-    # paper_title = "Leadership Training Design, Delivery, and Implementation: A Meta-Analysis"
-    # doi = "10.1037/apl0000241"
-    # #paths = os.getcwd() + "/src/temp/Capture.PNG"
-        #print(credential)
-    if 'credentials' not in session:
-        return redirect('authorize')
 
     # Load credentials from the session.
     credentials = google.oauth2.credentials.Credentials(
@@ -176,8 +166,11 @@ def PullTable():
     drive = googleapiclient.discovery.build(
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
     
-     #get files metadata in PDEA folder on google drive
+    #get files metadata in PDEA folder on google drive
     file_items = get_files(drive, get_JsonTables_folder_id(drive))  
+
+    if not file_items:
+        return "No table is ready for extraction"
 
     requested = drive.files().get_media(fileId=file_items[0]["id"])
 
@@ -188,44 +181,31 @@ def PullTable():
             status, done = downloader.next_chunk()
             #print ("Download: %", int(status.progress() * 100))
     fh.seek(0)
-    Extracted_data = json.load(fh)
+    extracted_data = json.load(fh)
+
+    
     pub = []
-    for data in Extracted_data:
+    for data in extracted_data:
         pub.append(PubData(data["doi"]))
         
-
- 
-     #html_table = io.StringIO(table_html)
-    #html_table.seek(0)
-    #print(table_html)
-    #table_num = request.args.get('table', default = 1, type = int)
-    
-    # args = request.args
-    # if "paper" in args:
-    #     paper = args.get("paper")
-    # else:
-    #     paper = 0
-    
-    # if "table_num" in args:
-    #     table_num = args.get("table_num")
-    # else:
-    #     table_num = 0
     paper = request.args.get("paper" , default = 0, type = int)
     table_num = request.args.get("table_num" , default = 0, type = int)
 
+    if paper >= len(extracted_data) :
+        return "success" , 200
 
-    table_html = Extracted_data[paper]["tables"][table_num] 
+    table_html = extracted_data[paper]["tables"][table_num] 
     table_html = header + table_html + footer 
     rendered_table =  render_template_string(table_html)
-    page =  Extracted_data[paper]["pages_urls"][table_num]
+    page =  extracted_data[paper]["pages_urls"][table_num]
     page = re.sub("/view?.*", "/preview", page)
 
     pub_data = pub[paper]
 
-
-
+    max_tables = len(extracted_data[paper]["tables"])
+     
     
-    return render_template('indexT.html',table_num =1, tables = page, table_html= rendered_table , pub_data = pub_data)
+    return render_template('indexT.html',table_num = table_num, tables = page, table_html= rendered_table , pub_data = pub_data, max_tables = max_tables)
 
 
 @app.route('/extract')
@@ -358,7 +338,6 @@ def extract():
 
     return 'Sucesss', 200
 
-
 @app.route('/status_update')
 def list():
 
@@ -424,7 +403,7 @@ def post_json():
         #    for line in table:
         #        w.writerow(line)
 
-        print(table)  # parse as JSON
+        #print(table)  # parse as JSON
         print('clicked')
         
         #return render_template('indexT.html', title="paper_title2")
