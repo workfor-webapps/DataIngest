@@ -7,6 +7,11 @@ function html2json() {
   $table.find("thead th").each(function () {
       header.push($(this).html());
   });
+  
+  //header.push("Title")
+  //var pubData = $('#pub-data').data('value');
+  //var title = pubData;
+
 
   $table.find("tbody tr").each(function () {
       var row = {};
@@ -16,10 +21,14 @@ function html2json() {
               value = $(this).html();
 
           row[key] = value;
+          
       });
 
+     
       rows.push(row);
   });
+  
+
 
   //construct an HTTP request
   var xhr = new XMLHttpRequest();
@@ -29,10 +38,10 @@ function html2json() {
   // send the collected data as JSON
   xhr.send(JSON.stringify(rows));
 
-  //console.log(JSON.stringify(rows))
+  //console.log(JSON.stringify(rows));
 
   // reload page
-  var maxt = $('#my-data').data('value')
+  var maxt = $('#my-data').data('value');
   var url = window.location.href;    
   var url2 = replaceUrlParam (url, 'table_num', maxt);
   
@@ -51,9 +60,11 @@ function replaceUrlParam(url, paramName, max_t)
         value = 0;
       }
     var value = parseInt(value, 10);
-    var value = value + 1;
-
-
+    value = value + 1;
+    if (max_t == 100 && paramName=="table_num") {
+       value = 0;
+    }
+    
     if (value >= max_t) {
 
       
@@ -140,7 +151,12 @@ function magnify(imgID, zoom) {
 };
 
 function Ignore() {
-  var json = '{';
+   // reload page
+   var maxt = $('#my-data').data('value')
+   var url = window.location.href;    
+   var url2 = replaceUrlParam (url, 'table_num', maxt);
+   
+   window.location.href = url2;
   console.log("Table Deleted")
   return 200;
 };

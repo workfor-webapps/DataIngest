@@ -5,6 +5,17 @@
 {% endblock %}
 
 {% block body %}
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+    <div class="text-center bg-success">
+       <strong> {{ message }} </strong> 
+    </div>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
 
     <div class="container">
         <div>
@@ -41,7 +52,7 @@
                 </thead>
                 <tbody>
                 {% for i in range(file_numbers) %}    
-                    {% if files_data[i]["status"] == "Complete" %} 
+                    {% if files_data[i]["status"] == "Processed" %} 
                      <tr class="success">
                     {%else %}
                     <tr class="info">

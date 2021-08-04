@@ -1,11 +1,8 @@
 """Main python file for flask application. This app uses google drive api to read and write data from
     a personal google account (needs to be changed to server maybe?). 
 """
-import mock
-from werkzeug.utils import html
-from werkzeug.datastructures import ImmutableMultiDict
 from src.drive_functions import get_New_folder_id, get_files, get_NoDOI_folder_id, get_logs_folder_id, move_file, \
-                                get_archive_folder_id, save_files, get_Images_folder_id, get_JsonTables_folder_id
+                                get_archive_folder_id, save_files, get_Images_folder_id, get_JsonTables_folder_id, empty_Images_folder
 
 from src.Pdf_table_extr import PubData, extract_tables, get_doi
 #from google.cloud import datastore
@@ -18,12 +15,15 @@ import googleapiclient.discovery
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 import datetime
 from google.cloud import datastore
+from jpype import *
+
 
 
 CLIENT_SECRETS_FILE = "client_secret.json"
-SCOPES  = ['https://www.googleapis.com/auth/drive']
+SCOPES  = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets']
 API_SERVICE_NAME = 'drive'
 API_VERSION = 'v3'
+SPREADSHEETID = "1on5td4NHeXA1JY9bfRrJGv6kNnX4YRdb2NtA2nDKu0U"
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -87,10 +87,9 @@ def index():
 
     else:
 
-        files_data = dict.fromkeys(['name', 'doi', 'status'])
-        files = [files_data]
+        return redirect(url_for('list'))
 
-        return render_template('index.html', files_data=files,file_numbers = 1)
+        #return render_template('index.html', files_data=files,file_numbers = 1)
     
 
 
@@ -110,6 +109,7 @@ def authorize():
       # Enable offline access so that you can refresh an access token without
       # re-prompting the user for permission. Recommended for web server apps.
       access_type='offline',
+      approval_prompt='force',
       # Enable incremental authorization. Recommended as a best practice.
       include_granted_scopes='true')
 
@@ -139,10 +139,11 @@ def oauth2callback():
     flow.fetch_token(authorization_response=authorization_response)
  	
     credentials = flow.credentials
-    print(credentials)
-    store_cred(credentials_to_dict(credentials))
+    dict = credentials_to_dict(credentials)
+    
+    store_cred(dict)
 
-    session['credentials'] = credentials_to_dict(credentials)
+    session['credentials'] = dict
     return redirect(url_for('list'))
 
 @app.route('/PullTables')  #  https://www.python.org/dev/peps/pep-0008/#function-and-variable-names
@@ -153,6 +154,13 @@ def PullTable():
     header = "{% extends 'table_base.html' %}\n{% block body %}\n"
     footer = "\n{% endblock %}"
 
+    credential = get_cred()
+    session['credentials'] = credential
+
+    #print(credential)
+    if 'credentials' not in session:
+        return redirect('authorize')
+
     # Load credentials from the session.
     credentials = google.oauth2.credentials.Credentials(
         **session['credentials'])
@@ -160,8 +168,9 @@ def PullTable():
     # Save credentials back to session in case access token was refreshed.
     # ACTION ITEM: In a production app, you likely want to save these
     #              credentials in a persistent database instead.
-    #store_cred (credentials_to_dict(credentials))
-    session['credentials'] = credentials_to_dict(credentials)
+    Dict_cred = credentials_to_dict(credentials)
+    store_cred (Dict_cred)
+    session['credentials'] = Dict_cred
 
     drive = googleapiclient.discovery.build(
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
@@ -170,7 +179,9 @@ def PullTable():
     file_items = get_files(drive, get_JsonTables_folder_id(drive))  
 
     if not file_items:
-        return "No table is ready for extraction"
+        
+        flash ('No table for extraction!')
+        return redirect(url_for('index'))
 
     requested = drive.files().get_media(fileId=file_items[0]["id"])
 
@@ -192,7 +203,34 @@ def PullTable():
     table_num = request.args.get("table_num" , default = 0, type = int)
 
     if paper >= len(extracted_data) :
-        return "success" , 200
+        empty_Images_folder(drive)
+        
+        #saving new log file
+        log_file = []
+        files_data = dict.fromkeys(['name', 'doi', 'status'])
+
+        for data in extracted_data:
+            files_data["doi"] = data["doi"]
+            files_data["name"] = data["name"]
+            files_data["status"] = "Processed"
+            log_file.append(files_data)
+
+            # convert logs into JSON:
+        data = json.dumps(log_file)
+        folderId = get_logs_folder_id(drive)
+        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+        name = datetime.datetime.now().strftime("%Y%m%d%H")
+        save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")    # convert logs into JSON:
+        data = json.dumps(log_file)
+        folderId = get_logs_folder_id(drive)
+        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+        name = datetime.datetime.now().strftime("%Y%m%d%H")
+        save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+
+        move_file(service=drive, file_id=file_items[0]["id"],folder_id=get_archive_folder_id(drive))
+        flash ('Table processing complete!')
+        return redirect(url_for('index'))
+        
 
     table_html = extracted_data[paper]["tables"][table_num] 
     table_html = header + table_html + footer 
@@ -211,9 +249,9 @@ def PullTable():
 @app.route('/extract')
 def extract():
     
-    
+    startJVM(convertStrings=False)
     #credential = get_cred()
-    #session['credentials'] = credentials_to_dict(credential)
+    #session['credentials'] = credential
 
     #print(credential)
     if 'credentials' not in session:
@@ -226,8 +264,9 @@ def extract():
     # Save credentials back to session in case access token was refreshed.
     # ACTION ITEM: In a production app, you likely want to save these
     #              credentials in a persistent database instead.
-    #store_cred (credentials_to_dict(credentials))
-    session['credentials'] = credentials_to_dict(credentials)
+    Dict_cred = credentials_to_dict(credentials)
+    #store_cred (Dict_cred)
+    session['credentials'] = Dict_cred
 
     drive = googleapiclient.discovery.build(
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
@@ -306,7 +345,7 @@ def extract():
                     #save pdf pages to images folder
                     folderId = get_Images_folder_id(drive)
                     P_id, P_url = save_files(service=drive, data=pdf_page_bytes, name=doi+str(page), folderId= folderId, mimetype = "application/pdf" )
-                    P_url = re.sub("/view?*", "/preview", P_url)
+                    #P_url = re.sub("/view?*", "/preview", P_url)
                     pages_url.append(P_url)
                 
                 files_data["pages_urls"] = pages_url
@@ -336,13 +375,15 @@ def extract():
 
     fh.flush()  
 
+ 
+
     return 'Sucesss', 200
 
 @app.route('/status_update')
 def list():
 
     #credential = get_cred()
-    #session['credentials'] = credentials_to_dict(credential)
+    #session['credentials'] = credential
 
     #print(credential)
     if 'credentials' not in session:
@@ -355,8 +396,9 @@ def list():
     # Save credentials back to session in case access token was refreshed.
     # ACTION ITEM: In a production app, you likely want to save these
     #              credentials in a persistent database instead.
-    #store_cred (credentials_to_dict(credentials))
-    session['credentials'] = credentials_to_dict(credentials)
+    Dict_cred = credentials_to_dict(credentials)
+    #store_cred (Dict_cred)
+    session['credentials'] = Dict_cred
 
     drive = googleapiclient.discovery.build(
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
@@ -376,7 +418,7 @@ def list():
     fh.seek(0)
     logs = json.load(fh)
     print(logs)
-    print(file_items[0]["name"])
+    
     file_num = len(logs)
     fh.flush()
 
@@ -386,9 +428,36 @@ def list():
 
 
 
-@app.route('/post_json', methods = ['POST'])
+@app.route('/post_json', methods = ['GET' ,'POST'])
 def post_json():
+
+
+
+    
     if request.method == 'POST':
+
+        #credential = get_cred()
+        #session['credentials'] = credential
+
+        #print(credential)
+        if 'credentials' not in session:
+            return redirect('authorize')
+
+        # Load credentials from the session.
+        credentials = google.oauth2.credentials.Credentials(
+            **session['credentials'])
+        
+        # Save credentials back to session in case access token was refreshed.
+        # ACTION ITEM: In a production app, you likely want to save these
+        #              credentials in a persistent database instead.
+        dict_cred = credentials_to_dict(credentials)
+        #store_cred (dict_cred)
+        session['credentials'] = dict_cred
+
+        drive = googleapiclient.discovery.build('sheets', 'v4', credentials=credentials)
+        sheet = drive.spreadsheets()
+
+
         table = request.get_json()
         print(type(table))
         
@@ -396,55 +465,46 @@ def post_json():
         df = pd.DataFrame(table)
         df.drop(df.columns[len(df.columns)-1], axis=1, inplace=True)
         #import csv
-        df.to_excel("table.xlsx" , index=False)
-        #with open('table.json', 'w') as f:
-        #    w = csv.DictWriter(f, table[0].keys())
-        #    w.writeheader()
-        #    for line in table:
-        #        w.writerow(line)
+        #df.to_excel("table.xlsx" , index=False)
 
-        #print(table)  # parse as JSON
-        print('clicked')
         
+        body = dict(
+            majorDimension='ROWS', values = df.T.reset_index().T.values.tolist()
+        )
+
+        
+        response = sheet.values().append(
+            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1",
+            body=body).execute()
+
         #return render_template('indexT.html', title="paper_title2")
         return 'Sucesss', 200
 
-@app.route('/ignore_json')
-def ignore_json():
-    
-    return 'Sucesss', 200
-
-
-@app.route('/showPDF')
-def showPDF():
-    
-
-    return render_template('pdf.html')
-
 
 def store_cred(credentials):
-    db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
+    #db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
     #db = ndb.Client(project="test", credentials=credentials)
-    datastore_client = datastore.Client(project="metadata-pdea", credentials=db_credentials)
+    datastore_client = datastore.Client(project="metadata-pdea")
     kind = 'drive_cred'
-    id = 5644004762845184 
-    key = datastore_client.key(kind, id)
-    entity = datastore.Entity(key=key)
-    entity.update({
-        'token': credentials["token"],
-        'refresh_token': credentials["refresh_token"],
-        'token_uri': credentials["token_uri"],
-        'client_id': credentials["client_id"],
-        'client_secret': credentials["client_secret"],
-        'scopes': credentials["scopes"]})
+    id = 5644004762845184
+    with datastore_client.transaction():
+ 
+        key = datastore_client.key(kind, id)
+        entity = datastore_client.get(key=key)
+        entity["token"] = credentials["token"]
+        entity["refresh_token"] = credentials["refresh_token"]
+        entity["token_uri"] = credentials["token_uri"]
+        entity["client_id"] = credentials["client_id"]
+        entity["client_secret"] = credentials["client_secret"]
+        entity["scopes"] = credentials["scopes"]
 
-    datastore_client.put(entity)
+        datastore_client.put(entity)
 
 def store_doi(doi):
     #datastore_client = datastore.Client(project="metadata-pdea")
-    db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
+    #db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
     #db = ndb.Client(project="test", credentials=credentials)
-    datastore_client = datastore.Client(project="metadata-pdea", credentials=db_credentials)
+    datastore_client = datastore.Client(project="metadata-pdea")
     #check if doi already exist
     query = datastore_client.query(kind="files")
     query.add_filter("doi", "=", doi)
@@ -474,9 +534,9 @@ def store_doi(doi):
 
 def get_cred():
     #datastore_client = datastore.Client(project="metadata-pdea")
-    db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
+    #db_credentials = mock.Mock(spec=google.oauth2.credentials.Credentials)
     #db = ndb.Client(project="test", credentials=credentials)
-    datastore_client = datastore.Client(project="metadata-pdea", credentials=db_credentials)
+    datastore_client = datastore.Client(project="metadata-pdea")
     kind = 'drive_cred'
     id = 5644004762845184 
     key = datastore_client.key(kind, id)
@@ -492,7 +552,5 @@ def credentials_to_dict(credentials):
           'client_secret': credentials.client_secret,
           'scopes': credentials.scopes}
 
-
-
 if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=8080)
+    app.run(debug=True, host='localhost', port=8888)

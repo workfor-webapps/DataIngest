@@ -5,7 +5,7 @@
 <br>
 {% block body %}
 
-
+<meta id="pub-data" data-value="{{pub_data['title']}}">
 <!-- <div class="jumbotron"> -->
     <div class="container-fluid">
         <div class="row">
@@ -28,7 +28,7 @@
             </div>
             <div class="col-6">
 
-               <form action="/submit_form">  <!-- FOAD replace this with a flask endpoint-->
+               <form class="form-horizontal" action="/post_json" method="POST">  
                 
                    <div class="row form-group">
                        <div class="col text-right ">
@@ -36,7 +36,7 @@
 
                        </div>
                        <div class="col">
-                           <select class="form-control" id="ref_con" aria-label=" ">
+                           <select class="control-label" id="ref_con" >
                                <option selected>Leadership </option>
                                <option value="1">training</option>
                                <option value="2">effectiveness</option>
@@ -53,7 +53,7 @@
 
                        </div>
                        <div class="col">
-                           <select class="form-control" id="con_cat" aria-label=" ">
+                           <select class="control-label" id="con_cat" aria-label=" ">
                                <option selected>Leadership </option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -67,7 +67,7 @@
 
                        </div>
                        <div class="col">
-                           <select class="form-control" id="con_dir" aria-label=" ">
+                           <select class="control-label" id="con_dir" aria-label=" ">
                                <option selected>Outcome</option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -81,7 +81,7 @@
 
                        </div>
                        <div class="col">
-                           <select class="form-control" id="eff_type" aria-label=" ">
+                           <select class="control-label" id="eff_type" aria-label=" ">
                                <option selected>Correlation</option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -96,7 +96,7 @@
         </div>
         <div class="row">
             <div class="col-5 "> <!-- This div is for image and magnifier-->
-                <style>
+                <!-- <style>
                     * {box-sizing: border-box;}
                     
                     .img-magnifier-container {
@@ -112,11 +112,11 @@
                       width: 100px;
                       height: 100px;
                     }
-                </style>
+                </style> -->
                 <!-- <img id = "pageImage" class="img-fluid shadow-lg p-3 mb-5 bg-white" src='../static/capture.png'> -->
-                <div class="img-magnifier-container">
-                    <iframe width="750" height="900" src={{tables}}> </iframe> 
-                </div>
+                
+                    <iframe style="position: sticky; position: -webkit-sticky; top: 0;"  width="750" height="900" src={{tables}}> </iframe> 
+                
             </div>
 
             
@@ -153,9 +153,10 @@
 
                     </div>
                     <div class="col-8">
-                        <a class="btn btn-danger btn-lg" onclick="Ignore()">Ignore</a>
-                                        
+                        
                         <meta id="my-data" data-value="{{max_tables}}">
+
+                        <a class="btn btn-danger btn-lg" onclick="Ignore()">Ignore</a>
 
                         <a class="btn btn-success btn-lg" onclick="html2json()"> Accept </a>
 

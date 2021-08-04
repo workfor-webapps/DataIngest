@@ -15,7 +15,6 @@ sphinx
 sphinx-rtd-theme
 requests
 json2html
-
-
-
+google_spreadsheet
+JPype1
 
