@@ -1,9 +1,6 @@
 """This is a module for extraction of Meta_Analysis table data and
     developed for this specific purpose. In order to run this script please follow the steps
     in README.md file 
-
-    :return: Publication info and extracted table data
-    :rtype: datasets
 """
 import os, io
 import sys
@@ -11,7 +8,6 @@ import tabula
 import PyPDF2
 import pandas as pd
 import numpy as np
-import shutil
 import re
 import crossref_commons.retrieval
 from pdfminer import high_level
@@ -62,7 +58,7 @@ def get_title_from_pdf(pdf_file):
     return paper_title
 
 
-
+#---------------------------------------------------------------------------------------
 def get_doi(pdf_file):
 
     """This function finds publication DOI from a PDF's first or second page using regex
@@ -73,7 +69,6 @@ def get_doi(pdf_file):
     :rtype: str
     """
 
-    #local_pdf_filename = path_files
     pages = [0,1] # just the first and second pages
     #get the text
     text = high_level.extract_text(pdf_file, "", pages)
@@ -90,7 +85,7 @@ def get_doi(pdf_file):
     return m
 
 
-
+#---------------------------------------------------------------------------------------
 def get_pubData(doi):
     
     """A function to resolve doi from crossref database
@@ -153,10 +148,15 @@ class PubData:
             self.jur = self.data['short-container-title'][0]
 
         
-    
-
-#*******************************************************************************************
+#---------------------------------------------------------------------------------------
 def extract_tables(fh):
+    """This function extracts all the relevent table data from a PDF file using Tabula and PyPDF libs.
+
+    :param fh: ByteIO file
+    :type fh: ByteIO
+    :return: list of all the processed tables and their page numbers in the pdf file 
+    :rtype: Dataframe
+    """
 
     pdf_in = fh #open(path_files,'rb')
     pdf_file = PyPDF2.PdfFileReader(pdf_in)
@@ -283,16 +283,44 @@ def extract_tables(fh):
             table_clean[num] = table_clean[num].drop(columns = [str(table_clean[num].columns[1])])
 
         table_clean[num].columns.str.upper()
-        for ind in table_clean[num].index:
-            for col in table_clean[num].columns:
-                try:
-                    temp = table_clean[num][col].iloc[ind]
-                    table_clean[num][col].iloc[ind] = float(temp)
+        # for ind in table_clean[num].index:
+        #     for col in table_clean[num].columns:
+        #         try:
+        #             temp = table_clean[num][col].iloc[ind]
+        #             table_clean[num][col].iloc[ind] = float(temp)
                     
-                except:
-                    print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
-        table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+        #         except:
+        #             print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
+        
 
+        #spliting columns if values sperated by space
+        for column in table_clean[num].columns:
+            col = column.split(" ", 1)
+            if len(col) > 1:
+                new = table_clean[num][column].astype(str).str.split(" ", n = 1, expand = True)
+                if len(new.columns) > 1:
+                    #print(new)
+                    table_clean[num] = table_clean[num].drop(columns = [column])
+                    col0 = col[0]
+                    col1 = col[1]
+                    table_clean[num][col0] = new[0]
+                    table_clean[num][col1] = new[1]
+        
+        df = table_clean[num]
+        hyphen = [r'^\u002D', r'^\u05BE', r'^\u1806', r'^\u2010', r'^\u2011', r'^\u2012', r'^\u2013', r'^\u2014', r'^\uFE58', r'^\uFE63', r'^\uFF0D']
+        #df = df.replace('^–','-', regex=True) # this is added so excel can identify negative values 
+        df = df.replace('^0,','0.', regex=True) # this is added so excel can identify negative values
+        df = df.replace('^\.','0.', regex=True)
+        df = df.replace(',','', regex=True) # this is added so excel can identify negative values
+        df = df.replace('\*{1,4}$','',regex=True) # this is added so excel can identify numerical values 
+        df = df.replace('–', np.nan) # this is added so excel can identify NAN values
+        df = df.replace('-', np.nan) # this is added so excel can identify NAN values
+        df = df.replace(regex=hyphen, value="-")
+        df = df.replace('^-\.','-0.', regex=True)
+
+        table_clean[num] = df
+
+        table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
         #convert dataframes to json objects
         #table_clean[num] = table_clean[num].to_json(orient='table')
         table_clean[num] = table_clean[num].to_html(index=False, justify="left", na_rep="",\
@@ -300,6 +328,7 @@ def extract_tables(fh):
     
     return table_clean, table_pages
 
+#---------------------------------------------------------------------------------------
 def write_to_excel(writer, jj, paper_title, table_clean):
         # Saving data to an excel sheet
     workbook = writer.book
@@ -369,8 +398,7 @@ def write_to_excel(writer, jj, paper_title, table_clean):
     writer.save()
     return 0
 
-#**************************************************************************************
-#***************************** Initializing *******************************************
+#---------------------------------------------------------------------------------------
 if __name__ == '__main__':
     # get PDF files directory
     path = os.getcwd() + "/temp/"

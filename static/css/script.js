@@ -29,7 +29,6 @@ function html2json() {
   });
   
 
-
   //construct an HTTP request
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/post_json', true);
@@ -43,14 +42,13 @@ function html2json() {
   // reload page
   var maxt = $('#my-data').data('value');
   var url = window.location.href;    
-  var url2 = replaceUrlParam (url, 'table_num', maxt);
-  
-  
-  
+  var url2 = replaceUrlParam (url, 'table_num', maxt); 
   window.location.href = url2;
+
   return 200;
 };
 
+//------------------------------------------------------------------------------------------------
 function replaceUrlParam(url, paramName, max_t)
 {
 
@@ -78,8 +76,9 @@ function replaceUrlParam(url, paramName, max_t)
     }
     url = url.replace(/[?#]$/,'');
     return url + (url.indexOf('?')>0 ? '&' : '?') + paramName + '=' + value;
-}
+};
 
+//------------------------------------------------------------------------------------------------
 function GetURLParameter(sParam)
 {
     var sPageURL = window.location.search.substring(1);
@@ -94,6 +93,7 @@ function GetURLParameter(sParam)
     }
 };
 
+//------------------------------------------------------------------------------------------------
 // Java image magnifier function 
 function magnify(imgID, zoom) {
   var img, glass, w, h, bw;
@@ -161,7 +161,7 @@ function Ignore() {
   return 200;
 };
 
-
+//------------------------------------------------------------------------------------------------
 function applyAll() {
   var x = document.getElementById("concept").value; 
   var table = document.getElementById("pdf");
@@ -174,6 +174,7 @@ function applyAll() {
 
 };
 
+//------------------------------------------------------------------------------------------------
 function ClearAll() {
   
   var table = document.getElementById("pdf");

@@ -1,6 +1,5 @@
 """This is the google drive api module and contatins functions to interact to googledrive
     and googlesheets
-
 """
 
 from io import BytesIO
@@ -103,8 +102,8 @@ def get_service(API_SERVICE_NAME, API_VERSION):
     :rtype: google service
     """
 
-    credential = get_cred()
-    session['credentials'] = credential
+    #credential = get_cred()
+    #session['credentials'] = credential
 
     if 'credentials' not in session:
         return redirect('authorize')
@@ -114,7 +113,7 @@ def get_service(API_SERVICE_NAME, API_VERSION):
         **session['credentials'])
     
     Dict_cred = credentials_to_dict(credentials)
-    store_cred (Dict_cred)
+    #store_cred (Dict_cred)
     session['credentials'] = Dict_cred
 
     service = googleapiclient.discovery.build(
@@ -124,114 +123,93 @@ def get_service(API_SERVICE_NAME, API_VERSION):
 
 #-----------------------------------------------------------------------------------------
 def save_files(service, data, name, folderId, mimetype ):
-    """function to upload files to google drive through api call
+    """This function is to upload files to connected google drive
 
-    :param service: created google drive serviece
-    :type service: API service
+    :param service: google drive service 
+    :type service: google service
+    :param data: IO data to be saved 
+    :type data: BytesIO
+    :param name: name of the file to save the data into
+    :type name: str
+    :param folderId: Drive folder Id to save the data into
+    :type folderId: str
+    :param mimetype: minetype of the file
+    :type mimetype: str
+    :return: saved file Id and url
+    :rtype: str
     """
 
     folder_id = folderId
-    #print("Folder ID:", folder_id)
-    # upload a file text file
-    # first, define file metadata, such as the name and the parent folder ID
     file_metadata = {
         "name": name,
         "parents": [folder_id]
     }
-    # upload
-    #string = " this is a test"
-    #fh = bytes (data)#, encoding='utf8')
-    #fd = BytesIO(data)
+
     media = MediaIoBaseUpload(data, mimetype=mimetype, chunksize=1024*1024, resumable=True)
     file = service.files().create(body=file_metadata, media_body=media, fields='id, webViewLink').execute()
-    #print("File created, id:", file.get("id"))
     fileId = file.get("id")
     fileUrl = file.get("webViewLink")
     
     return fileId, fileUrl
 
 #-----------------------------------------------------------------------------------------
-def get_archive_folder_id(service):
+def get_folder_id(service, name):
+    """This function gets the folder ID with a given name in the connected google drive.
+
+    :param service: google drive service object
+    :type service: service
+    :param name: folder name
+    :type name: str
+    :return: folder ID
+    :rtype: str
+    """
     
     # First, get the folder ID by querying by mimeType and name
-    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'Archive'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
+    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains " + "'" + name + "'",
+     pageSize=10, fields="nextPageToken, files(id, name)").execute()
     # this gives us a list of all folders with that name
     folderIdResult = folderId.get('files', [])
     # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
     id = folderIdResult[0].get('id')
-    
     return id
 
-#-----------------------------------------------------------------------------------------
-def get_NoDOI_folder_id(service):
-    
-    # First, get the folder ID by querying by mimeType and name
-    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'NoDOI'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    # this gives us a list of all folders with that name
-    folderIdResult = folderId.get('files', [])
-    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
-    id = folderIdResult[0].get('id')
-    return id
-#-----------------------------------------------------------------------------------------
-def get_Images_folder_id(service):
-    
-    # First, get the folder ID by querying by mimeType and name
-    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'Images'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    # this gives us a list of all folders with that name
-    folderIdResult = folderId.get('files', [])
-    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
-    id = folderIdResult[0].get('id')
-    return id
-#-----------------------------------------------------------------------------------------
-def get_JsonTables_folder_id(service):
-    
-    # First, get the folder ID by querying by mimeType and name
-    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'JsonTable'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    # this gives us a list of all folders with that name
-    folderIdResult = folderId.get('files', [])
-    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
-    id = folderIdResult[0].get('id')
-    return id
-#-----------------------------------------------------------------------------------------
-def get_New_folder_id(service):
-    
-    # First, get the folder ID by querying by mimeType and name
-    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'New'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    # this gives us a list of all folders with that name
-    folderIdResult = folderId.get('files', [])
-    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
-    id = folderIdResult[0].get('id')
-    return id
-#-----------------------------------------------------------------------------------------
-def get_logs_folder_id(service):
-    
-    # First, get the folder ID by querying by mimeType and name
-    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'logs'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    # this gives us a list of all folders with that name
-    folderIdResult = folderId.get('files', [])
-    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
-    id = folderIdResult[0].get('id')
-    return id
 #-----------------------------------------------------------------------------------------
 def get_files(service, folder_id):
-    """A function to read files metadata from a folder (PDEA) in google drive
-    to extract the tables
+    """This funtion finds all the files in a google drive folder and returns their metadata.
 
-    :param service: google drive serviece
+    :param service: google drive service object
     :type service: service
+    :param folder_id: google drive folder ID (obtainable from ''get_folder_id(service, name)'' function)
+    :type folder_id: str
+    :return: list of files metadata in the google folder
+    :rtype: list
     """
     
     id = folder_id
 
     # Now, using the folder ID gotten above, we get all the files from
     # that particular folder
-    results = service.files().list(q = "'" + id + "' in parents", orderBy = "createdTime desc", pageSize=10, fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime, webContentLink, webViewLink )").execute()
+    results = service.files().list(
+        q = "'" + id + "' in parents", 
+        orderBy = "createdTime desc", 
+        pageSize=10, 
+        fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime, webContentLink, webViewLink )"
+        ).execute()
 
     items = results.get('files', [])
     return items
 
 #-----------------------------------------------------------------------------------------
 def move_file(service, file_id, folder_id):
+    """This function moves the given file with the ''file_id'' to the folder with ''folder_id''.
+
+    :param service: google drive service object
+    :type service: service
+    :param file_id: Id of the file to be moved
+    :type file_id: str
+    :param folder_id: Google drive folder ID to move the file into
+    :type folder_id: str
+    """
 
     # Retrieve the existing parents to remove
     file = service.files().get(fileId=file_id,
@@ -243,10 +221,13 @@ def move_file(service, file_id, folder_id):
                                         removeParents=previous_parents,
                                         fields='id, parents').execute()
 
-
 #-----------------------------------------------------------------------------------------
 def empty_Images_folder(service):
-    
+    """This function removes all the files in Images folder.
+
+    :param service: google drive service object
+    :type service: service
+    """
     # First, get the folder ID by querying by mimeType and name
     folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'Images'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
     # this gives us a list of all folders with that name
@@ -259,6 +240,3 @@ def empty_Images_folder(service):
 
     for item in items:
         service.files().delete(fileId=item["id"]).execute()
-
-
-

@@ -7,16 +7,16 @@ from flask import Flask, render_template, request, redirect, g, flash, url_for, 
 import os, sys, io, json, re
 import datetime
 import PyPDF2
-import google.oauth2.credentials
+#import google.oauth2.credentials
 import google_auth_oauthlib.flow
-import googleapiclient.discovery
+#import googleapiclient.discovery
 from googleapiclient.http import MediaIoBaseDownload
 
 
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES  = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets']
 API_SERVICE_DRIVE = 'drive'
-API_SERVICE_SHEET = 'sheet'
+API_SERVICE_SHEET = 'sheets'
 API_DRIVE_VERSION = 'v3'
 API_SHEET_VERSION = 'v4'
 SPREADSHEETID = "1on5td4NHeXA1JY9bfRrJGv6kNnX4YRdb2NtA2nDKu0U"
@@ -85,7 +85,6 @@ def index():
         return redirect('authorize')
 
     else:
-
         return redirect(url_for('list'))  
 
 #------------------------------------------------------------------------------------------------
@@ -118,7 +117,7 @@ def oauth2callback():
     credentials = flow.credentials
 
     dict = credentials_to_dict(credentials)
-    store_cred(dict)
+    #store_cred(dict)
     session['credentials'] = dict
 
     return redirect(url_for('list'))
@@ -132,8 +131,7 @@ def PullTable():
     footer = "\n{% endblock %}"
 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
-    #get files metadata in PDEA folder on google drive
-    file_items = get_files(drive, get_JsonTables_folder_id(drive))  
+    file_items = get_files(drive, get_folder_id(drive, "JsonTable"))  
 
     if not file_items:
         flash ('No table for extraction!')
@@ -146,7 +144,6 @@ def PullTable():
 
     while done is False:
             status, done = downloader.next_chunk()
-            #print ("Download: %", int(status.progress() * 100))
     
     fh.seek(0)
     extracted_data = json.load(fh)
@@ -171,19 +168,19 @@ def PullTable():
             files_data["status"] = "Processed"
             log_file.append(files_data)
 
-            # convert logs into JSON:
+        # convert logs into JSON:
         data = json.dumps(log_file)
-        folderId = get_logs_folder_id(drive)
+        folderId = get_folder_id(drive, "logs")
         json_byte = io.BytesIO(bytes(data, encoding='utf8'))
         name = datetime.datetime.now().strftime("%Y%m%d%H")
         save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")    # convert logs into JSON:
         data = json.dumps(log_file)
-        folderId = get_logs_folder_id(drive)
+        folderId = get_folder_id(drive, "logs")
         json_byte = io.BytesIO(bytes(data, encoding='utf8'))
         name = datetime.datetime.now().strftime("%Y%m%d%H")
         save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
-        move_file(service=drive, file_id=file_items[0]["id"],folder_id=get_archive_folder_id(drive))
+        move_file(service=drive, file_id=file_items[0]["id"],folder_id=get_folder_id(drive, "Archive"))
         flash ('Table processing complete!')
         return redirect(url_for('index'))
         
@@ -199,24 +196,22 @@ def PullTable():
     max_tables = len(extracted_data[paper]["tables"])
      
     
-    return render_template('indexT.html',table_num = table_num, tables = page, table_html= rendered_table , pub_data = pub_data, max_tables = max_tables)
+    return render_template('indexT.html',table_num = table_num, tables = page, 
+                            table_html= rendered_table , pub_data = pub_data, 
+                            max_tables = max_tables)
 
-
+#------------------------------------------------------------------------------------------------
 @app.route('/extract')
 def extract():
     
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
     #get files metadata in PDEA folder on google drive
-    folder_id = get_New_folder_id(drive)
+    folder_id = get_folder_id(drive, "New")
     file_items = get_files(drive, folder_id)
     
     log_file = []
     data_file = []
-
-    #initialize files dict
-    #files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
-    #files_log = dict.fromkeys(['name', 'doi', 'status'])
 
     if not file_items:
         return 'No new file', 200
@@ -239,7 +234,7 @@ def extract():
         
         while done is False:
             status, done = downloader.next_chunk()
-            #print ("Download: %", int(status.progress() * 100))
+
         fh.seek(0)
         doi = get_doi(fh)
         files_data["doi"] = doi
@@ -247,7 +242,7 @@ def extract():
         
         if doi == "DOI not found!": # move to "nodoi" folder"
             file_id = file["id"]
-            folder_id = get_NoDOI_folder_id(drive)
+            folder_id = get_folder_id(drive, "NoDOI")
             move_file(service=drive, file_id=file_id,folder_id=folder_id)
             files_log["status"] = "Failed"
         else:
@@ -256,7 +251,7 @@ def extract():
             
             if state == "Old":
                 file_id = file["id"]
-                folder_id = get_archive_folder_id(drive)
+                folder_id = get_folder_id(drive, "Archive")
                 move_file(service=drive, file_id=file_id,folder_id=folder_id)
                 files_data["status"] = "Duplicate"
                 files_log["status"] = "Duplicated"
@@ -279,14 +274,16 @@ def extract():
                     pdf_writer.write(pdf_page_bytes)
 
                     #save pdf pages to images folder
-                    folderId = get_Images_folder_id(drive)
-                    P_id, P_url = save_files(service=drive, data=pdf_page_bytes, name=doi+str(page), folderId= folderId, mimetype = "application/pdf" )
+                    folderId = get_folder_id(drive, "Images")
+                    P_id, P_url = save_files(service=drive, data=pdf_page_bytes, 
+                                            name=doi+str(page), folderId= folderId, 
+                                            mimetype = "application/pdf")
                     #P_url = re.sub("/view?*", "/preview", P_url)
                     pages_url.append(P_url)
                 
                 files_data["pages_urls"] = pages_url
 
-                folder_id = get_archive_folder_id(drive)
+                folder_id = get_folder_id(drive, "Archive")
                 move_file(service=drive, file_id=file["id"],folder_id=folder_id)
 
 
@@ -297,39 +294,36 @@ def extract():
 
     # convert logs into JSON:
     data = json.dumps(log_file)
-    folderId = get_logs_folder_id(drive)
+    folderId = get_folder_id(drive, "logs")
     json_byte = io.BytesIO(bytes(data, encoding='utf8'))
     name = datetime.datetime.now().strftime("%Y%m%d%H")
     save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
     # convert tables into JSON:
     data = json.dumps(data_file)
-    folderId = get_JsonTables_folder_id(drive)
+    folderId = get_folder_id(drive, "JsonTable")
     json_byte = io.BytesIO(bytes(data, encoding='utf8'))
     name = datetime.datetime.now().strftime("%Y%m%d%H") 
     save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
-
     fh.flush()  
 
     return 'Sucesss', 200
 
+#------------------------------------------------------------------------------------------------
 @app.route('/status_update')
 def list():
 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
     
      #get files metadata in PDEA folder on google drive
-    file_items = get_files(drive, get_logs_folder_id(drive))
-    
-
+    file_items = get_files(drive, get_folder_id(drive, "logs"))
     request = drive.files().get_media(fileId=file_items[0]["id"])
-
     fh = io.BytesIO()
     downloader = MediaIoBaseDownload(fh, request)
     done = False
     while done is False:
             status, done = downloader.next_chunk()
-            #print ("Download: %", int(status.progress() * 100))
+
     fh.seek(0)
     logs = json.load(fh)
     print(logs)
@@ -340,10 +334,8 @@ def list():
     return render_template('index.html', files_data=logs, file_numbers = file_num)
     
 
-
-
-
-@app.route('/post_json', methods = ['GET' ,'POST'])
+#------------------------------------------------------------------------------------------------
+@app.route('/post_json', methods = ['POST'])
 def post_json():
 
     if request.method == 'POST':
@@ -358,9 +350,7 @@ def post_json():
         df = pd.DataFrame(table)
         df.drop(df.columns[len(df.columns)-1], axis=1, inplace=True)
         
-        body = dict(
-            majorDimension='ROWS', values = df.T.reset_index().T.values.tolist()
-        )
+        body = dict(majorDimension='ROWS', values = df.T.reset_index().T.values.tolist())
 
         
         response = sheet.values().append(
@@ -369,6 +359,6 @@ def post_json():
 
         return 'Sucesss', 200
 
-
+#------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True, host='localhost', port=8888)
