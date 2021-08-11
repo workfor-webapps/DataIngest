@@ -317,10 +317,19 @@ def extract_tables(fh):
         df = df.replace('-', np.nan) # this is added so excel can identify NAN values
         df = df.replace(regex=hyphen, value="-")
         df = df.replace('^-\.','-0.', regex=True)
+        
+        df.insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+        
+        #adding the column names to rows
+        col_names = [[x for x in df.columns]]
+        col_names2 = [x for x in df.columns]
+        col_array = np.array(list(col_names))
+        df2 = pd.DataFrame(col_array, columns=col_names2)
+        
+        table_clean[num] = pd.concat([df2,df], axis=0, ignore_index= True, join="outer")
+        table_clean[num].columns = [" "]*len(table_clean[num].columns)
 
-        table_clean[num] = df
-
-        table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+        
         #convert dataframes to json objects
         #table_clean[num] = table_clean[num].to_json(orient='table')
         table_clean[num] = table_clean[num].to_html(index=False, justify="left", na_rep="",\

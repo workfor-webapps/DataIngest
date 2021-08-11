@@ -191,14 +191,15 @@ def PullTable():
     page =  extracted_data[paper]["pages_urls"][table_num]
     page = re.sub("/view?.*", "/preview", page)
 
-    pub_data = pub[paper]
+    PDFurl =  extracted_data[paper]["PDF_url"]
+    PDFurl = re.sub("/view?.*", "/preview", PDFurl)
 
+    pub_data = pub[paper]
     max_tables = len(extracted_data[paper]["tables"])
      
-    
     return render_template('indexT.html',table_num = table_num, tables = page, 
                             table_html= rendered_table , pub_data = pub_data, 
-                            max_tables = max_tables)
+                            max_tables = max_tables, pdf_url = PDFurl)
 
 #------------------------------------------------------------------------------------------------
 @app.route('/extract')
