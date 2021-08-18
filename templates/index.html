@@ -5,43 +5,76 @@
 {% endblock %}
 
 {% block body %}
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+    <div class="text-center bg-success">
+       <strong> {{ message }} </strong> 
+    </div>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
 
     <div class="container">
         <div>
             <div class="row">
                 <div class="col">
-                    <h2><div style="text-align: center;">MetaFinds Data Extraction Main Page</div></h2>
+                    <h3><div style="text-align: center;">MetaFinds Data Extraction Main Page</div></h3>
                     <br>
                     <br>
-                    <div style="text-align: center;"><img src="static/FrontPage.png" alt="MetaFinds" width="600"></div>
+                     <div style="text-align: center;"><img src="static/FrontPage.png" alt="MetaFinds" width="400"></div>
                     <br>
                     <hr>
-                    <br>
+                    
                 </div>
 
             </div>
             <div class="row">
-                <div class="col-6 col-centered d-flex justify-content-center">
-                    <a style="text-align: center;" class="btn btn-outline-success my-2 my-sm-0" href="/list_pdfs">List PDFs</a>
+                <div class="col-12 col-centered d-flex justify-content-center">
+                   <h4> <div style="text-align: center;">Extraction summary</div> </h4> 
 
                 </div>
-                <div class="col-6 col-centered d-flex justify-content-center">
-                    <a style="text-align: center;" class="btn btn-outline-success my-2 my-sm-0" href="/PullTables">Pull Tables</a>
+                <div class="col-1">
+                    <a style="text-align: right;" class="btn btn-link btn-sm my-2 my-sm-0" href="/status_update">refresh</a>
+                </div>
+            </div>
+            <br>
+
+            <table class="table">
+                <thead>
+                  <tr>
+                    <th style="font-size: medium; color: firebrick;">File name</th>
+                    <th style="font-size: medium; color: firebrick;">DOI</th>
+                    <th style="font-size: medium; color: firebrick;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for i in range(file_numbers) %}    
+                    {% if files_data[i]["status"] == "Processed" %} 
+                     <tr class="success">
+                    {%else %}
+                    <tr class="info">
+                    {% endif %}
+                    <td style="font-size: medium;">{{files_data[i]["name"]}}</td>
+                    <td style="font-size: medium;"> {{files_data[i]["doi"]}}</td>
+                    <td style="font-size: medium;"> {{files_data[i]["status"]}}</td>
+                  </tr>      
+                {% endfor %}
+                </tbody>
+            </table>
+            
+            
+            <div class="row">
+
+                <div class="col col-centered d-flex justify-content-center">
+                    <a style="text-align: center;" class="btn btn-success my-2 my-sm-0" href="/PullTables">Go to Extracted Tables</a>
 
                 </div>
             </div>
             <br>
-            {% for pdfs in pdf_list %}
-            <div class="row">
-                <div class="col-6 col-centered d-flex justify-content-center">
-                    
-                    <div style="text-align: center;">{{pdfs["name"]}}</div>
-                    
 
-                </div>
-
-            </div>
-            {% endfor %}
         </div>
     </div>
 

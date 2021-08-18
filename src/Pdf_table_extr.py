@@ -1,49 +1,170 @@
-import os
+"""This is a module for extraction of Meta_Analysis table data and
+    developed for this specific purpose. In order to run this script please follow the steps
+    in README.md file 
+"""
+import os, io
 import sys
 import tabula
 import PyPDF2
 import pandas as pd
 import numpy as np
-import shutil
+import re
+import crossref_commons.retrieval
+from pdfminer import high_level
 
-#import xlsxwriter
+
+
+
 def excel_init():
+    
     """ This function initializes an excel writer and creates Processed excel file.
-        input: none
-        returns: ExcelWriter object"""
+        
+        :return writer: ExcelWriter object and creates a Processed.xlsx file
+        :rtype: ExcelWriter object
+        """
 
+    #check if excel file exists
     if os.path.isfile("./Processed.xlsx"): 
         ans = str(input("Warning: Processed.xlsx file in the working directory will be overwritten, would you like to continue? y/n :")).upper()
+        
+        #if file exist ask if you wnat to overwrite it
         if ans == "N" or ans == "NO":
             print("Terminating the program...")
             sys.exit() 
+
     #open an excel file
     writer = pd.ExcelWriter('./Processed.xlsx', engine='xlsxwriter')
     return(writer)
 
-def get_title(path_files):
-    """ This function returns title of the input pdf file
-        Args: None
-        Returns: (str) paper_title """
-    pdf_in = open(path_files,'rb')
-    pdf_file = PyPDF2.PdfFileReader(pdf_in)
+
+
+def get_title_from_pdf(pdf_file):
+    
+    """This function uses PyPDF2 library to extract the paper title. This function is 
+    developed just in case the publication metadata is not extractable from crossref.
+
+    :param pdf_files: pdf file binary
+    :type path_files: binary file content
+    :return: paper title
+    :rtype: str
+    """
+    #pdf_in = open(path_files,'rb') #if the file is stored on local drive
+    pdf_file = PyPDF2.PdfFileReader(pdf_file)
     if pdf_file.getOutlines() == []: 
         paper_title = pdf_file.getDocumentInfo()["/Title"] 
     else:
         paper_title = pdf_file.getOutlines()[0]["/Title"]
     
-    pdf_in.close()
     return paper_title
 
-#*******************************************************************************************
-def extract_tables(path_files):
 
-    pdf_in = open(path_files,'rb')
+#---------------------------------------------------------------------------------------
+def get_doi(pdf_file):
+
+    """This function finds publication DOI from a PDF's first or second page using regex
+    
+    :param pdf_file: pdf file content
+    :type pdf_file: binary
+    :return: DOI
+    :rtype: str
+    """
+
+    pages = [0,1] # just the first and second pages
+    #get the text
+    text = high_level.extract_text(pdf_file, "", pages)
+    # regular expression
+    doi_re = re.compile("/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\>\"\<)])+")
+    #search re in the text
+    m = doi_re.search(text)
+
+    if m is None:
+        m="DOI not found!"
+    else:
+        m = m.group(0)
+    
+    return m
+
+
+#---------------------------------------------------------------------------------------
+def get_pubData(doi):
+    
+    """A function to resolve doi from crossref database
+
+    :param doi: DOI of a publication
+    :type doi: str
+    :return: publication metadata
+    :rtype: json
+    """
+
+    pub_data = crossref_commons.retrieval.get_publication_as_json(doi)
+
+    return pub_data
+
+#https://gitlab.com/crossref/crossref_commons_py
+class PubData:
+    """This class stores publication data extracted from crossref call
+
+    :param title: title of the publication
+    :type title: str, defaults to none
+    :param authors: list of authors
+    :type authors: str, defaults to none
+    :param jur: Name of the journal
+    :type jur: str
+    :param pub_year: Published year, defaults to 0
+    :type pub_year: int
+    :param doi: doi of the publication
+    :type: str
+    """
+
+    title= ""
+    authors = ""
+    jur = ""
+    pub_year = 0
+    doi = ""
+    status = True
+
+    def __init__(self, doi) -> None:
+        """class constractor
+
+        :param doi: doi
+        :type doi: str
+        """
+        self.doi = doi
+        try:
+            self.data = crossref_commons.retrieval.get_publication_as_json(doi)
+        except ValueError: #DOI could not be resulved
+            print("DOI does not exist in crossref database")
+            self.status = False
+        
+        if self.status:
+            self.title = self.data["title"][0]
+            Authors = [[x["given"], x["family"]] for x in self.data['author']]
+            Author_str = ""
+            for i in range(len(Authors)):
+                for j in range(2):
+                    Author_str += Authors[i][j] 
+                Author_str += ", "
+            self.authors = Author_str
+            self.jur = self.data['short-container-title'][0]
+
+        
+#---------------------------------------------------------------------------------------
+def extract_tables(fh):
+    """This function extracts all the relevent table data from a PDF file using Tabula and PyPDF libs.
+
+    :param fh: ByteIO file
+    :type fh: ByteIO
+    :return: list of all the processed tables and their page numbers in the pdf file 
+    :rtype: Dataframe
+    """
+
+    pdf_in = fh #open(path_files,'rb')
     pdf_file = PyPDF2.PdfFileReader(pdf_in)
     pages = pdf_file.numPages 
-    file_p = path_files
+    file_p = fh# path_files
     #initialize table-clean
     table_clean = []
+    table_pages = []
     #******************************************************************
     #******************** Looping over pages for each PDF file ********
     #loop over pages
@@ -52,26 +173,8 @@ def extract_tables(path_files):
         #***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0********
         #************************************************************************************************************
 
-        #check if the page is rotated - first check/attempt to fix rotated pages
-        if (pdf_file.getPage(pg).get('/Rotate') != None and (pdf_file.getPage(pg).get('/Rotate')) != 0):
-            pdf_writer = PyPDF2.PdfFileWriter()
-
-            pdf_page = pdf_file.getPage(pg)
-            pdf_page.rotateClockwise(90)  # rotate Clockwise()
-            pdf_writer.addPage(pdf_page)
-
-            #path to rotated directory- gets created if not there
-            path_rot = os.getcwd() + "/RotatedPages/"
-            isExist = os.path.exists(path)
-            if (not isExist): 
-                os.mkdir(path_rot)
-            file_ext = 'Rot_{}_P_{}.pdf'.format("temp",str(pg))
-            with open(file_ext, 'wb') as pdf_page_rotated:
-                pdf_writer.write(pdf_page_rotated)
-            tables = tabula.read_pdf(file_ext, multiple_tables=True, pages="1") # finding tables using tabula    
-            shutil.move (os.getcwd() + "/" + file_ext, path_rot + file_ext)
-        else:
-            tables = tabula.read_pdf(file_p, multiple_tables=True, pages=str(pg+1)) # finding tables using tabula
+        file_p.seek(0)
+        tables = tabula.read_pdf(file_p, multiple_tables=True, pages=str(pg+1)) # finding tables using tabula
         
         #cleaning tables
         i = 0
@@ -130,18 +233,14 @@ def extract_tables(path_files):
                 if z==1 : pdf_page.scaleBy(0.5)         # scale 
                 pdf_writer.addPage(pdf_page)
 
-                #path to rotated directory- gets created if not there
-                path_rot = os.getcwd() + "/RotatedPages/"
-                isExist = os.path.exists(path)
-                if (not isExist): 
-                    os.mkdir(path_rot)
-                file_ext = 'Rot_{}_P_{}.pdf'.format("temp",str(pg))
-                with open(file_ext, 'wb') as pdf_page_rotated:
-                    pdf_writer.write(pdf_page_rotated)
-                tables = tabula.read_pdf(file_ext, multiple_tables=True, pages="1") # finding tables using tabula  
+                pdf_bytes = io.BytesIO()
+                pdf_writer.write(pdf_bytes)
+                pdf_bytes.seek(0)
+                
+                tables = tabula.read_pdf(pdf_bytes, multiple_tables=True, pages="all") # finding tables using tabula  
 
-                shutil.move (os.getcwd() + "/" + file_ext, path_rot + file_ext)
-
+                pdf_bytes.flush()
+                #shutil.move (os.getcwd() + "/" + file_ext, path_rot + file_ext)
                 z+=1
                 i = 0
                 j = len(tables)
@@ -149,6 +248,7 @@ def extract_tables(path_files):
 
             #add to table clean
             table_clean.append(df)
+            table_pages.append(pg+1)
             i+=1
     #************************************* end of pages loop*********************************************
 
@@ -183,18 +283,52 @@ def extract_tables(path_files):
             table_clean[num] = table_clean[num].drop(columns = [str(table_clean[num].columns[1])])
 
         table_clean[num].columns.str.upper()
-        for ind in table_clean[num].index:
-            for col in table_clean[num].columns:
-                try:
-                    temp = table_clean[num][col].iloc[ind]
-                    table_clean[num][col].iloc[ind] = float(temp)
+        # for ind in table_clean[num].index:
+        #     for col in table_clean[num].columns:
+        #         try:
+        #             temp = table_clean[num][col].iloc[ind]
+        #             table_clean[num][col].iloc[ind] = float(temp)
                     
-                except:
-                    print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
-        table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
-    
-    return table_clean
+        #         except:
+        #             print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
+        
 
+        #spliting columns if values sperated by space
+        for column in table_clean[num].columns:
+            col = column.split(" ", 1)
+            if len(col) > 1:
+                new = table_clean[num][column].astype(str).str.split(" ", n = 1, expand = True)
+                if len(new.columns) > 1:
+                    #print(new)
+                    table_clean[num] = table_clean[num].drop(columns = [column])
+                    col0 = col[0]
+                    col1 = col[1]
+                    table_clean[num][col0] = new[0]
+                    table_clean[num][col1] = new[1]
+        
+        df = table_clean[num]
+        hyphen = [r'^\u002D', r'^\u05BE', r'^\u1806', r'^\u2010', r'^\u2011', r'^\u2012', r'^\u2013', r'^\u2014', r'^\uFE58', r'^\uFE63', r'^\uFF0D']
+        #df = df.replace('^–','-', regex=True) # this is added so excel can identify negative values 
+        df = df.replace('^0,','0.', regex=True) # this is added so excel can identify negative values
+        df = df.replace('^\.','0.', regex=True)
+        df = df.replace(',','', regex=True) # this is added so excel can identify negative values
+        df = df.replace('\*{1,4}$','',regex=True) # this is added so excel can identify numerical values 
+        df = df.replace('–', np.nan) # this is added so excel can identify NAN values
+        df = df.replace('-', np.nan) # this is added so excel can identify NAN values
+        df = df.replace(regex=hyphen, value="-")
+        df = df.replace('^-\.','-0.', regex=True)
+
+        table_clean[num] = df
+
+        table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+        #convert dataframes to json objects
+        #table_clean[num] = table_clean[num].to_json(orient='table')
+        table_clean[num] = table_clean[num].to_html(index=False, justify="left", na_rep="",\
+                             classes="table table-light table-striped table-hover table-bordered table-responsive-lg", table_id="pdf")
+    
+    return table_clean, table_pages
+
+#---------------------------------------------------------------------------------------
 def write_to_excel(writer, jj, paper_title, table_clean):
         # Saving data to an excel sheet
     workbook = writer.book
@@ -264,14 +398,7 @@ def write_to_excel(writer, jj, paper_title, table_clean):
     writer.save()
     return 0
 
-#********************************************************************************************
-
-""" This is a python script for extraction of Meta_Analysis table data and
-    developed for this specific purpose. In order to run this script please follow the steps
-    in README.md file  """
-
-#**************************************************************************************
-#***************************** Initializing *******************************************
+#---------------------------------------------------------------------------------------
 if __name__ == '__main__':
     # get PDF files directory
     path = os.getcwd() + "/temp/"
@@ -288,12 +415,21 @@ if __name__ == '__main__':
 
     writer = excel_init()
 
-    jj = 1 # this is for sheet names in excel writer
-    temp_file = path+"temp.pdf"
+    #jj = 1 # this is for sheet names in excel writer
+    temp_file = path+"B.pdf"
 
-    time_modified = os.path.getmtime(temp_file)
+    #time_modified = os.path.getmtime(temp_file)
+    doi = get_doi(temp_file)
+    
+    x = PubData(doi)
 
-    paper_title = get_title(temp_file)
+    
+    
+    print(x.data)
+    #print("Title= ", x.title)
+
+    #print(paper_title)
     table_clean = extract_tables(temp_file)
-    write_to_excel(writer, jj, paper_title, table_clean)
-    jj += 1
+    #write_to_excel(writer, jj, paper_title, table_clean)
+    #jj += 1
+    print(table_clean[0])

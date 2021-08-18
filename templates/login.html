@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+    <div class="alert alert-danger">
+       <strong> {{ message }} </strong> 
+    </div>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+
+
+<div class="row">
+    <div class="col-5">
+
+    </div>
+    <div class="col-6 form-group">
+
+
+        <form method="POST">
+            <div class="field">
+            <label class="label">Username</label>
+            <div class="control has-icons-left has-icons-right">
+                <input class="input" type="text" name="username" placeholder="Username">
+                <span class="icon is-small is-left">
+                <i class="fas fa-user"></i>
+                </span>
+            </div>
+            </div>
+            <div class="field">
+            <label class="label">Password</label>
+            <p class="control has-icons-left">
+                <input class="input" type="password" name="password" placeholder="Password">
+                <span class="icon is-small is-left">
+                <i class="fas fa-lock"></i>
+                </span>
+            </p>
+            </div>
+            <div class="field">
+            <p class="control">
+                <button type="submit" class="button is-success">
+                Login
+                </button>
+            </p>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

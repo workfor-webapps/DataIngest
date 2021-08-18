@@ -1,0 +1,611 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>src.Pdf_table_extr &mdash; PDEA 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> PDEA
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">PDEA</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PDEA</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>src.Pdf_table_extr</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for src.Pdf_table_extr</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This is a python script for extraction of Meta_Analysis table data and</span>
+<span class="sd">    developed for this specific purpose. In order to run this script please follow the steps</span>
+<span class="sd">    in README.md file </span>
+
+<span class="sd">    :return: Publication info and extracted table data</span>
+<span class="sd">    :rtype: datasets</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">tabula</span>
+<span class="kn">import</span> <span class="nn">PyPDF2</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">crossref_commons.retrieval</span>
+
+<span class="c1">#import xlsxwriter</span>
+<div class="viewcode-block" id="excel_init"><a class="viewcode-back" href="../../src.html#src.Pdf_table_extr.excel_init">[docs]</a><span class="k">def</span> <span class="nf">excel_init</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; This function initializes an excel writer and creates Processed excel file.</span>
+<span class="sd">        </span>
+<span class="sd">        :param: none</span>
+<span class="sd">        :return writer: ExcelWriter object and creates a Processed.xlsx file</span>
+<span class="sd">        :rtype: ExcelWriter object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s2">&quot;./Processed.xlsx&quot;</span><span class="p">):</span> 
+        <span class="n">ans</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Warning: Processed.xlsx file in the working directory will be overwritten, would you like to continue? y/n :&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ans</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span> <span class="ow">or</span> <span class="n">ans</span> <span class="o">==</span> <span class="s2">&quot;NO&quot;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Terminating the program...&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span> 
+    <span class="c1">#open an excel file</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelWriter</span><span class="p">(</span><span class="s1">&#39;./Processed.xlsx&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;xlsxwriter&#39;</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="get_title_from_pdf"><a class="viewcode-back" href="../../src.html#src.Pdf_table_extr.get_title_from_pdf">[docs]</a><span class="k">def</span> <span class="nf">get_title_from_pdf</span><span class="p">(</span><span class="n">path_files</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function uses PyPDF2 library to extract the paper title. </span>
+
+<span class="sd">    :param path_files: pdf file location</span>
+<span class="sd">    :type path_files: str</span>
+<span class="sd">    :return: paper title</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pdf_in</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_files</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">pdf_file</span> <span class="o">=</span> <span class="n">PyPDF2</span><span class="o">.</span><span class="n">PdfFileReader</span><span class="p">(</span><span class="n">pdf_in</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">getOutlines</span><span class="p">()</span> <span class="o">==</span> <span class="p">[]:</span> 
+        <span class="n">paper_title</span> <span class="o">=</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">getDocumentInfo</span><span class="p">()[</span><span class="s2">&quot;/Title&quot;</span><span class="p">]</span> 
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">paper_title</span> <span class="o">=</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">getOutlines</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;/Title&quot;</span><span class="p">]</span>
+    
+    <span class="n">pdf_in</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">paper_title</span></div>
+
+<div class="viewcode-block" id="get_doi"><a class="viewcode-back" href="../../src.html#src.Pdf_table_extr.get_doi">[docs]</a><span class="k">def</span> <span class="nf">get_doi</span><span class="p">(</span><span class="n">path_files</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;This function finds publication DOI from a PDF&#39;s first or second page using regex</span>
+<span class="sd">    </span>
+<span class="sd">    :param path_files: path to the pdf file</span>
+<span class="sd">    :type path_files: str</span>
+<span class="sd">    :return: DOI</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">from</span> <span class="nn">pdfminer</span> <span class="kn">import</span> <span class="n">high_level</span>
+
+    <span class="n">local_pdf_filename</span> <span class="o">=</span> <span class="n">path_files</span>
+    <span class="n">pages</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># just the first page</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="n">high_level</span><span class="o">.</span><span class="n">extract_text</span><span class="p">(</span><span class="n">local_pdf_filename</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">pages</span><span class="p">)</span>
+    <span class="n">doi_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\&gt;</span><span class="se">\&quot;</span><span class="s2">\&lt;)])+&quot;</span><span class="p">)</span>
+    <span class="c1">#doi_re = re.compile(&quot;10.(\d)+/([^(\s\&gt;\&quot;\&lt;)])+&quot;)</span>
+    
+    <span class="c1">#pdf_in = open(path_files,&#39;rb&#39;)</span>
+    <span class="c1">#pdf_file = PyPDF2.PdfFileReader(pdf_in)</span>
+    <span class="c1">#text = pdf_file.getPage(0).extractText()</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">doi_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="c1">#print( text)</span>
+    <span class="c1">#pdf_in.close()</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">m</span><span class="o">=</span><span class="s2">&quot;DOI not found!&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">m</span></div>
+<div class="viewcode-block" id="get_pubData"><a class="viewcode-back" href="../../src.html#src.Pdf_table_extr.get_pubData">[docs]</a><span class="k">def</span> <span class="nf">get_pubData</span><span class="p">(</span><span class="n">doi</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A function to resolve doi form crossref database</span>
+
+<span class="sd">    :param doi: DOI of a publication</span>
+<span class="sd">    :type doi: str</span>
+<span class="sd">    :return: publication metadata</span>
+<span class="sd">    :rtype: json</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">pub_data</span> <span class="o">=</span> <span class="n">crossref_commons</span><span class="o">.</span><span class="n">retrieval</span><span class="o">.</span><span class="n">get_publication_as_json</span><span class="p">(</span><span class="n">doi</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pub_data</span></div>
+
+<span class="c1">#https://gitlab.com/crossref/crossref_commons_py</span>
+<div class="viewcode-block" id="PubData"><a class="viewcode-back" href="../../src.html#src.Pdf_table_extr.PubData">[docs]</a><span class="k">class</span> <span class="nc">PubData</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This class stores publication data extracted from crossref call</span>
+
+<span class="sd">    :param title: title of the publication</span>
+<span class="sd">    :type title: str, defaults to none</span>
+<span class="sd">    :param authors: list of authors</span>
+<span class="sd">    :type authors: str, defaults to none</span>
+<span class="sd">    :param jur: Name of the journal</span>
+<span class="sd">    :type jur: str</span>
+<span class="sd">    :param pub_year: Published year, defaults to 0</span>
+<span class="sd">    :type pub_year: int</span>
+<span class="sd">    :param doi: doi of the publication</span>
+<span class="sd">    :type: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">title</span><span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">jur</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">pub_year</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doi</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;class constractor</span>
+
+<span class="sd">        :param doi: doi</span>
+<span class="sd">        :type doi: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">crossref_commons</span><span class="o">.</span><span class="n">retrieval</span><span class="o">.</span><span class="n">get_publication_as_json</span><span class="p">(</span><span class="n">doi</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span> <span class="c1">#DOI could not be resulved</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DOI does not exist in crossref database&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">Authors</span> <span class="o">=</span> <span class="p">[[</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;given&quot;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;family&quot;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;author&#39;</span><span class="p">]]</span>
+            <span class="n">Author_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Authors</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                    <span class="n">Author_str</span> <span class="o">+=</span> <span class="n">Authors</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> 
+                <span class="n">Author_str</span> <span class="o">+=</span> <span class="s2">&quot;, &quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authors</span> <span class="o">=</span> <span class="n">Author_str</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jur</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;short-container-title&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+        
+    
+
+<span class="c1">#*******************************************************************************************</span>
+<div class="viewcode-block" id="extract_tables"><a class="viewcode-back" href="../../src.html#src.Pdf_table_extr.extract_tables">[docs]</a><span class="k">def</span> <span class="nf">extract_tables</span><span class="p">(</span><span class="n">path_files</span><span class="p">):</span>
+
+    <span class="n">pdf_in</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_files</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">pdf_file</span> <span class="o">=</span> <span class="n">PyPDF2</span><span class="o">.</span><span class="n">PdfFileReader</span><span class="p">(</span><span class="n">pdf_in</span><span class="p">)</span>
+    <span class="n">pages</span> <span class="o">=</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">numPages</span> 
+    <span class="n">file_p</span> <span class="o">=</span> <span class="n">path_files</span>
+    <span class="c1">#initialize table-clean</span>
+    <span class="n">table_clean</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1">#******************************************************************</span>
+    <span class="c1">#******************** Looping over pages for each PDF file ********</span>
+    <span class="c1">#loop over pages</span>
+    <span class="k">for</span> <span class="n">pg</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">pages</span><span class="p">):</span>
+        <span class="c1">#************************************************************************************************************</span>
+        <span class="c1">#***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0********</span>
+        <span class="c1">#************************************************************************************************************</span>
+
+        <span class="c1">#check if the page is rotated - first check/attempt to fix rotated pages</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">pdf_file</span><span class="o">.</span><span class="n">getPage</span><span class="p">(</span><span class="n">pg</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/Rotate&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">pdf_file</span><span class="o">.</span><span class="n">getPage</span><span class="p">(</span><span class="n">pg</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/Rotate&#39;</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">pdf_writer</span> <span class="o">=</span> <span class="n">PyPDF2</span><span class="o">.</span><span class="n">PdfFileWriter</span><span class="p">()</span>
+
+            <span class="n">pdf_page</span> <span class="o">=</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">getPage</span><span class="p">(</span><span class="n">pg</span><span class="p">)</span>
+            <span class="n">pdf_page</span><span class="o">.</span><span class="n">rotateClockwise</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>  <span class="c1"># rotate Clockwise()</span>
+            <span class="n">pdf_writer</span><span class="o">.</span><span class="n">addPage</span><span class="p">(</span><span class="n">pdf_page</span><span class="p">)</span>
+
+            <span class="c1">#path to rotated directory- gets created if not there</span>
+            <span class="n">path_rot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;/RotatedPages/&quot;</span>
+            <span class="n">isExist</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">isExist</span><span class="p">):</span> 
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">path_rot</span><span class="p">)</span>
+            <span class="n">file_ext</span> <span class="o">=</span> <span class="s1">&#39;Rot_</span><span class="si">{}</span><span class="s1">_P_</span><span class="si">{}</span><span class="s1">.pdf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;temp&quot;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">pg</span><span class="p">))</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_ext</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pdf_page_rotated</span><span class="p">:</span>
+                <span class="n">pdf_writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pdf_page_rotated</span><span class="p">)</span>
+            <span class="n">tables</span> <span class="o">=</span> <span class="n">tabula</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">file_ext</span><span class="p">,</span> <span class="n">multiple_tables</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pages</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">)</span> <span class="c1"># finding tables using tabula    </span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">file_ext</span><span class="p">,</span> <span class="n">path_rot</span> <span class="o">+</span> <span class="n">file_ext</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tables</span> <span class="o">=</span> <span class="n">tabula</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">file_p</span><span class="p">,</span> <span class="n">multiple_tables</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pages</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">pg</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># finding tables using tabula</span>
+        
+        <span class="c1">#cleaning tables</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># This is in case the numeric columns cannot be fixed by rotation</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">j</span><span class="p">:</span>
+
+            <span class="c1">#convert to pandas dataframe</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tables</span><span class="p">[(</span><span class="n">i</span><span class="p">)])</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">):</span> <span class="c1">#drop based on the shape - if smaler than 2 in row or column</span>
+                <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span> <span class="c1">#drop if number of NAN elements are higher than others</span>
+                <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+                <span class="k">continue</span>
+            
+
+
+            <span class="n">hyphen</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;^\u002D&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\u05BE&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\u1806&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\u2010&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\u2011&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\u2012&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\u2013&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\u2014&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\uFE58&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\uFE63&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;^\uFF0D&#39;</span><span class="p">]</span>
+            <span class="c1">#df = df.replace(&#39;^–&#39;,&#39;-&#39;, regex=True) # this is added so excel can identify negative values </span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;^0,&#39;</span><span class="p">,</span><span class="s1">&#39;0.&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># this is added so excel can identify negative values</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;^\.&#39;</span><span class="p">,</span><span class="s1">&#39;0.&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># this is added so excel can identify negative values</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;\*{1,4}$&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># this is added so excel can identify numerical values </span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;–&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span> <span class="c1"># this is added so excel can identify NAN values</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span> <span class="c1"># this is added so excel can identify NAN values</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="n">hyphen</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+            
+            <span class="c1">#drop if all/most column types are objects </span>
+            <span class="n">numeric_values</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">()])</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">/</span><span class="mi">3</span> <span class="o">&gt;</span> <span class="n">numeric_values</span><span class="p">:</span>
+                <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="c1">#drop columns if all values are NAN</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+
+            <span class="n">nn</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">mm</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">size</span>
+            <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;Unnamed&quot;</span>  <span class="ow">in</span> <span class="n">column</span><span class="p">):</span>
+                    <span class="n">nn</span><span class="o">+=</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">nn</span><span class="o">&gt;</span><span class="n">mm</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">:])</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
+        
+
+            <span class="c1">#Second check if a page is rotated- if columns are numeric it is possibly rotated</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">column</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">column</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">()]</span> <span class="c1">#list of numerical columns</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">pdf_writer</span> <span class="o">=</span> <span class="n">PyPDF2</span><span class="o">.</span><span class="n">PdfFileWriter</span><span class="p">()</span>
+
+                <span class="n">pdf_page</span> <span class="o">=</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">getPage</span><span class="p">(</span><span class="n">pg</span><span class="p">)</span>
+                <span class="n">pdf_page</span><span class="o">.</span><span class="n">rotateClockwise</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>  <span class="c1"># rotate Clockwise()</span>
+                <span class="k">if</span> <span class="n">z</span><span class="o">==</span><span class="mi">1</span> <span class="p">:</span> <span class="n">pdf_page</span><span class="o">.</span><span class="n">scaleBy</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>         <span class="c1"># scale </span>
+                <span class="n">pdf_writer</span><span class="o">.</span><span class="n">addPage</span><span class="p">(</span><span class="n">pdf_page</span><span class="p">)</span>
+
+                <span class="c1">#path to rotated directory- gets created if not there</span>
+                <span class="n">path_rot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;/RotatedPages/&quot;</span>
+                <span class="n">isExist</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">isExist</span><span class="p">):</span> 
+                    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">path_rot</span><span class="p">)</span>
+                <span class="n">file_ext</span> <span class="o">=</span> <span class="s1">&#39;Rot_</span><span class="si">{}</span><span class="s1">_P_</span><span class="si">{}</span><span class="s1">.pdf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;temp&quot;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">pg</span><span class="p">))</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_ext</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pdf_page_rotated</span><span class="p">:</span>
+                    <span class="n">pdf_writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pdf_page_rotated</span><span class="p">)</span>
+                <span class="n">tables</span> <span class="o">=</span> <span class="n">tabula</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">file_ext</span><span class="p">,</span> <span class="n">multiple_tables</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pages</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">)</span> <span class="c1"># finding tables using tabula  </span>
+
+                <span class="n">shutil</span><span class="o">.</span><span class="n">move</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">file_ext</span><span class="p">,</span> <span class="n">path_rot</span> <span class="o">+</span> <span class="n">file_ext</span><span class="p">)</span>
+
+                <span class="n">z</span><span class="o">+=</span><span class="mi">1</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">j</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1">#add to table clean</span>
+            <span class="n">table_clean</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+            <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="c1">#************************************* end of pages loop*********************************************</span>
+
+    <span class="c1">#fixing column names </span>
+    <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">table_clean</span><span class="p">)):</span>
+        <span class="n">rows_with_nan</span><span class="o">=</span><span class="p">[]</span>
+        <span class="c1">#i = 1</span>
+        <span class="c1">#j = table_clean[num].columns.size</span>
+        <span class="c1">#for column in table_clean[num].columns:</span>
+        <span class="c1">#    if (&quot;Unnamed&quot; in column):</span>
+        <span class="c1">#        i+=1</span>
+        <span class="c1">#if i&gt;j/2:</span>
+        <span class="c1">#    table_clean[num] = table_clean[num].rename(columns=table_clean[num].iloc[0,0:])</span>
+        <span class="c1">#    table_clean[num] = table_clean[num].drop([0])</span>
+        
+        <span class="c1">#re-indexing</span>
+        <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]))</span>   
+
+        <span class="c1"># filter rows with nan and add the row index to next row</span>
+        <span class="n">rows_with_nan</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span> <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">rows_with_nan</span><span class="p">:</span> 
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">rows_with_nan</span><span class="p">:</span>
+                <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">iat</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span>  <span class="s2">&quot;[ &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot; ]&quot;</span>
+        <span class="c1">#        table_clean[num] = table_clean[num].drop(rows_with_nan)</span>
+    
+        
+        <span class="c1"># if left and bottom of a column is NAN move it to left and drop the column</span>
+
+        <span class="k">if</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="ow">and</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="ow">and</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">:</span>
+            <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="nb">str</span><span class="p">(</span><span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">upper</span><span class="p">()})</span>
+            <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+
+        <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">temp</span> <span class="o">=</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">][</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+                    <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">][</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+                    
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;cannot convert to float in table </span><span class="si">%d</span><span class="s2">, column </span><span class="si">%s</span><span class="s2">, index </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span><span class="n">ind</span><span class="p">)</span>
+        <span class="n">table_clean</span><span class="p">[</span><span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s2">&quot;CONCEPT CATEGORY&quot;</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="s2">&quot;concept&quot;</span><span class="p">],</span> <span class="n">index</span> <span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    
+    <span class="k">return</span> <span class="n">table_clean</span></div>
+
+<div class="viewcode-block" id="write_to_excel"><a class="viewcode-back" href="../../src.html#src.Pdf_table_extr.write_to_excel">[docs]</a><span class="k">def</span> <span class="nf">write_to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">jj</span><span class="p">,</span> <span class="n">paper_title</span><span class="p">,</span> <span class="n">table_clean</span><span class="p">):</span>
+        <span class="c1"># Saving data to an excel sheet</span>
+    <span class="n">workbook</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">book</span>
+    <span class="k">if</span> <span class="n">jj</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+        <span class="c1">#adding cell formatting for summary cells</span>
+        <span class="n">sum_format</span> <span class="o">=</span> <span class="n">workbook</span><span class="o">.</span><span class="n">add_format</span><span class="p">({</span>
+            <span class="s1">&#39;bold&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;border&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;align&#39;</span><span class="p">:</span> <span class="s1">&#39;left&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;valign&#39;</span><span class="p">:</span> <span class="s1">&#39;vcenter&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fg_color&#39;</span><span class="p">:</span> <span class="s1">&#39;#00FFFF&#39;</span><span class="p">})</span>
+
+        <span class="n">worksheet_name</span> <span class="o">=</span> <span class="s2">&quot;Summary&quot;</span>
+        <span class="n">worksheet</span><span class="o">=</span><span class="n">workbook</span><span class="o">.</span><span class="n">add_worksheet</span><span class="p">(</span><span class="n">worksheet_name</span><span class="p">)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">sheets</span><span class="p">[</span><span class="n">worksheet_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">worksheet</span>
+        <span class="n">worksheet</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="s2">&quot;File name&quot;</span><span class="p">,</span> <span class="n">sum_format</span><span class="p">)</span>
+        <span class="n">worksheet</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="s2">&quot;Sheet number&quot;</span><span class="p">,</span> <span class="n">sum_format</span><span class="p">)</span>
+        <span class="n">worksheet</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span><span class="s2">&quot;Number of Clean Tables&quot;</span><span class="p">,</span> <span class="n">sum_format</span><span class="p">)</span>
+        <span class="n">worksheet</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span><span class="s2">&quot;Title&quot;</span><span class="p">,</span><span class="n">sum_format</span> <span class="p">)</span>
+
+
+    <span class="n">worksheet_name</span> <span class="o">=</span> <span class="s2">&quot;Pub_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">jj</span><span class="p">)</span>
+
+    <span class="n">writer</span><span class="o">.</span><span class="n">sheets</span><span class="p">[</span><span class="s2">&quot;Summary&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="n">jj</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;_name&quot;</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">sheets</span><span class="p">[</span><span class="s2">&quot;Summary&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="n">jj</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">worksheet_name</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">sheets</span><span class="p">[</span><span class="s2">&quot;Summary&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="n">jj</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">table_clean</span><span class="p">)))</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">sheets</span><span class="p">[</span><span class="s2">&quot;Summary&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="n">jj</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">paper_title</span><span class="p">)</span>
+
+
+    
+    <span class="n">start_row</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">worksheet</span><span class="o">=</span><span class="n">workbook</span><span class="o">.</span><span class="n">add_worksheet</span><span class="p">(</span><span class="n">worksheet_name</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">sheets</span><span class="p">[</span><span class="n">worksheet_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">worksheet</span>
+    <span class="n">worksheet</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="s2">&quot;Table: &quot;</span><span class="p">)</span>
+    <span class="c1"># Create a format to use in the merged range.</span>
+    <span class="n">merge_format</span> <span class="o">=</span> <span class="n">workbook</span><span class="o">.</span><span class="n">add_format</span><span class="p">({</span>
+        <span class="s1">&#39;bold&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;border&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s1">&#39;align&#39;</span><span class="p">:</span> <span class="s1">&#39;left&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;valign&#39;</span><span class="p">:</span> <span class="s1">&#39;vcenter&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;fg_color&#39;</span><span class="p">:</span> <span class="s1">&#39;#00FF00&#39;</span><span class="p">})</span>
+
+    <span class="c1"># Merge 5 cells.</span>
+    <span class="n">worksheet</span><span class="o">.</span><span class="n">merge_range</span><span class="p">(</span><span class="s1">&#39;A1:J1&#39;</span><span class="p">,</span><span class="s2">&quot;Title: &quot;</span> <span class="o">+</span> <span class="n">paper_title</span> <span class="p">,</span> <span class="n">merge_format</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">table_clean</span><span class="p">)):</span>
+
+        <span class="c1">#adding cell formatting for table number cells</span>
+        <span class="n">Cell_format</span> <span class="o">=</span> <span class="n">workbook</span><span class="o">.</span><span class="n">add_format</span><span class="p">({</span>
+            <span class="s1">&#39;bold&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;border&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;align&#39;</span><span class="p">:</span> <span class="s1">&#39;left&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;valign&#39;</span><span class="p">:</span> <span class="s1">&#39;vcenter&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fg_color&#39;</span><span class="p">:</span> <span class="s1">&#39;#FFD7D7&#39;</span><span class="p">})</span>
+        
+        <span class="n">worksheet</span><span class="o">.</span><span class="n">write_string</span><span class="p">(</span><span class="n">start_row</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="s2">&quot;Table: </span><span class="si">{}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ii</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">Cell_format</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">ii</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+
+            <span class="n">table_clean</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="n">worksheet_name</span><span class="p">,</span> <span class="n">startrow</span><span class="o">=</span><span class="n">start_row</span><span class="p">,</span> <span class="n">startcol</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">table_clean</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="n">worksheet_name</span><span class="p">,</span> <span class="n">startrow</span><span class="o">=</span><span class="n">start_row</span><span class="p">,</span> <span class="n">startcol</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+        
+        <span class="c1">#worksheet.column_dimensions[&#39;B&#39;].width = 40</span>
+        <span class="n">start_row</span> <span class="o">+=</span> <span class="n">table_clean</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+<span class="c1">#**************************************************************************************</span>
+<span class="c1">#***************************** Initializing *******************************************</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># get PDF files directory</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;/temp/&quot;</span>
+    <span class="n">isExist</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">isExist</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="c1">#adding google drive api to access files from gdrive</span>
+
+    <span class="c1">#check if the PDFs directory is empty</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)):</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;No file to process!&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+    <span class="c1">#writer = excel_init()</span>
+
+    <span class="c1">#jj = 1 # this is for sheet names in excel writer</span>
+    <span class="n">temp_file</span> <span class="o">=</span> <span class="n">path</span><span class="o">+</span><span class="s2">&quot;temp.pdf&quot;</span>
+
+    <span class="c1">#time_modified = os.path.getmtime(temp_file)</span>
+    <span class="n">doi</span> <span class="o">=</span> <span class="n">get_doi</span><span class="p">(</span><span class="n">temp_file</span><span class="p">)</span>
+    
+    <span class="n">x</span> <span class="o">=</span> <span class="n">PubData</span><span class="p">(</span><span class="n">doi</span><span class="p">)</span>
+
+    
+    
+    <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="c1">#print(&quot;Title= &quot;, x.title)</span>
+
+    <span class="c1">#print(paper_title)</span>
+    <span class="c1">#table_clean = extract_tables(temp_file)</span>
+    <span class="c1">#write_to_excel(writer, jj, paper_title, table_clean)</span>
+    <span class="c1">#jj += 1</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Foad Farivar.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

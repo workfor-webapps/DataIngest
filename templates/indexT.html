@@ -5,20 +5,20 @@
 <br>
 {% block body %}
 
-
+<meta id="pub-data" data-value="{{pub_data['title']}}">
 <!-- <div class="jumbotron"> -->
     <div class="container-fluid">
         <div class="row">
             <div class="col-4">
-                <strong>{{title}}</strong>
+                <strong>{{pub_data["title"]}}</strong>
                 <br>
                 <br>
 
-                <p>Lacerenza CN, Reyes DL, Marlow SL, Joseph DL, Salas E.</p>
+                <p>{{pub_data["authors"]}}</p>
 
-                <p><i>J Appl Psychol. 2017 Dec;102(12):1686-1718.</i></p>
+                <p><i>{{pub_data["jur"]}}</i></p>
 
-                <a href="http://www.google.com">doi: 10.1037/apl0000241 </a><img src="../static/link-256.webp" width="15">
+                <a href="https://doi.org/{{DOI}}">doi: {{pub_data["doi"]}} </a><img src="../static/link-256.webp" width="15">
                 <br>
                 <br>
                 <a href="/showPDF">Open PDF </a><img src="../static/link-256.webp" width="15">
@@ -28,31 +28,32 @@
             </div>
             <div class="col-6">
 
-               <form action="/submit_form">  <!-- FOAD replace this with a flask endpoint-->
-
-                   <div class="row">
+               <form class="form-horizontal" action="/post_json" method="POST">  
+                
+                   <div class="row form-group">
                        <div class="col text-right ">
                            <label for="ref_con"><b>REFERENCE CONCEPT</b></label>
 
                        </div>
                        <div class="col">
-                           <select class="form-control" id="ref_con" aria-label=" ">
-                               <option selected>Leadership training effectiveness</option>
-                               <option value="1">One</option>
-                               <option value="2">Two</option>
-                               <option value="3">Three</option>
+                           <select class="control-label" id="ref_con" >
+                               <option selected>Leadership </option>
+                               <option value="1">training</option>
+                               <option value="2">effectiveness</option>
+                               <option value="3">Other</option>
                            </select>
                        </div>
+                       
 
                    </div>
 
-                   <div class="row">
+                   <div class="row form-group">
                        <div class="col text-right">
                            <label for="con_cat"><b>CONCEPT CATEGORY</b></label>
 
                        </div>
                        <div class="col">
-                           <select class="form-control" id="con_cat" aria-label=" ">
+                           <select class="control-label" id="con_cat" aria-label=" ">
                                <option selected>Leadership </option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -60,13 +61,13 @@
                            </select>
                        </div>
                    </div>
-                   <div class="row">
+                   <div class="row form-group">
                        <div class="col text-right">
                            <label for="con_dir"><b>CONCEPT DIRECTION</b></label>
 
                        </div>
                        <div class="col">
-                           <select class="form-control" id="con_dir" aria-label=" ">
+                           <select class="control-label" id="con_dir" aria-label=" ">
                                <option selected>Outcome</option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -74,13 +75,13 @@
                            </select>
                        </div>
                    </div>
-                   <div class="row">
+                   <div class="row form-group">
                        <div class="col text-right">
                            <label for="eff_type"><b>EFFECT TYPE</b></b></label>
 
                        </div>
                        <div class="col">
-                           <select class="form-control" id="eff_type" aria-label=" ">
+                           <select class="control-label" id="eff_type" aria-label=" ">
                                <option selected>Correlation</option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
@@ -94,15 +95,35 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-5 ">
-                <img class="img-fluid shadow-lg p-3 mb-5 bg-white" src='../static/capture.png'>
+            <div class="col-5 "> <!-- This div is for image and magnifier-->
+                <!-- <style>
+                    * {box-sizing: border-box;}
+                    
+                    .img-magnifier-container {
+                      position:relative;
+                    }
+                    
+                    .img-magnifier-glass {
+                      position: absolute;
+                      border: 3px solid #000;
+                      border-radius: 50%;
+                      cursor: auto;
+                      /*Set the size of the magnifier glass:*/
+                      width: 100px;
+                      height: 100px;
+                    }
+                </style> -->
+                <!-- <img id = "pageImage" class="img-fluid shadow-lg p-3 mb-5 bg-white" src='../static/capture.png'> -->
+                
+                    <iframe style="position: sticky; position: -webkit-sticky; top: 0;"  width="750" height="900" src={{tables}}> </iframe> 
+                
             </div>
 
             
 
             <div class="col-7">
                 <div class="row">
-                    <div class="col-10">
+                    <div class="col-9">
                         <form class="form-inline" >
                             <label for="concept" class="mr-sm-2">CONCEPT CATEGORY :</label>
                             <input type="concept" class="form-control mb-2 mr-sm-2" placeholder="concept" id="concept">
@@ -112,9 +133,9 @@
                             <a class="btn btn-info btn-sm" onclick="ClearAll()">Clear all</a>
                         </form>  
                     </div>
-                    <div class="col-2">
+                    <div class="col-3">
                         <h4>
-                            <div style="text-align: right;">Table 1/5</div>
+                            <div style="text-align: right;">Table {{table_num}}/{{max_tables}} </span></div>
                         </h4>
 
                         <br>
@@ -122,7 +143,8 @@
                 </div>
                 
                 <div class="row">
-                {% include 'table_temp.html' %}
+                
+                    {{table_html | safe}}                               
 
                 </div>
                <div class="row">
@@ -131,9 +153,13 @@
 
                     </div>
                     <div class="col-8">
-                        <a class="btn btn-danger btn-lg" onclick="Ignore()">Ignore</a>
                         
-                        <a class="btn btn-success btn-lg" onclick="html2json()">Accept</a>
+                        <meta id="my-data" data-value="{{max_tables}}">
+
+                        <a class="btn btn-danger btn-lg" onclick="Ignore()">Ignore</a>
+
+                        <a class="btn btn-success btn-lg" onclick="html2json()"> Accept </a>
+
                     </div>
                 </div>
 
@@ -144,84 +170,18 @@
     </div>
 <!-- </div> -->
 
-<script>
-    function html2json() {
-        var $table = $("table")
-        rows = [],
-            header = [];
-
-        $table.find("thead th").each(function () {
-            header.push($(this).html());
-        });
-
-        $table.find("tbody tr").each(function () {
-            var row = {};
-
-            $(this).find("td").each(function (i) {
-                var key = header[i],
-                    value = $(this).html();
-
-                row[key] = value;
-            });
-
-            rows.push(row);
-        });
-
-    //construct an HTTP request
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/post_json', true);
-    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-
-    // send the collected data as JSON
-    xhr.send(JSON.stringify(rows));
-
-    console.log(JSON.stringify(rows))
-    return JSON.stringify(rows);
-    }
-
-</script>
-
 
 <script src="/static/css/bootstable.js"></script>
+<script src="/static/css/script.js"></script>
 <script>
-//apply
+
 $("#pdf").SetEditable();
 function add_bott() {
         rowAddNewAndEdit('pdf');
   };
 
 
-function Ignore() {
-    var json = '{';
-    console.log("Table Deleted")
-    return 200;
-  };
-
-
-function applyAll() {
-    var x = document.getElementById("concept").value; 
-    var table = document.getElementById("pdf");
-    var r = document.getElementById("pdf").rows.length;
-    for (i=1; i<r; i++) {
-        table.rows[i].cells[0].innerHTML = x
-    }
-    
-    return false
-
-};
-
-function ClearAll() {
-    
-    var table = document.getElementById("pdf");
-    var r = document.getElementById("pdf").rows.length;
-    for (i=1; i<r; i++) {
-        table.rows[i].cells[0].innerHTML = ""
-    }
-    
-    return false
-
-};
-
 </script>
+
 
 {% endblock %}
