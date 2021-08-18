@@ -1,7 +1,13 @@
+__pycache__/
 .ipynb_checkpoints/
 .vscode/
 PDFs/*
+src/temp/*
 Processed.xlsx
 Table_extr.ipynb
 rotated_tables_test.ipynb
 RotatedPages/*
+temp.pdf
+.gcloudignore
+table.csv
+table.xlsx

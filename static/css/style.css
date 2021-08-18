@@ -1,0 +1,14 @@
+.col-centered{
+    float: none;
+    margin: 0 auto;
+}
+
+th {
+    color: white;
+    font-size: 18px;
+}
+
+.btn.btn-out-dashed {
+    outline: 2px dashed #000;
+    /*outline-offset: -5px*/
+}

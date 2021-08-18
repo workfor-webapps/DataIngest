@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+
+    <div class="container">
+        <div>
+            <div class="row">
+                <div class="col">
+                    <h2><div style="text-align: center;">MetaFinds Data Extraction Main Page</div></h2>
+                    <br>
+                    <br>
+                    <div style="text-align: center;"><img src="static/FrontPage.png" alt="MetaFinds" width="600"></div>
+                    <br>
+                    <hr>
+                    <br>
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="col-6 col-centered d-flex justify-content-center">
+                    <a style="text-align: center;" class="btn btn-outline-success my-2 my-sm-0" href="/list_pdfs">List PDFs</a>
+
+                </div>
+                <div class="col-6 col-centered d-flex justify-content-center">
+                    <a style="text-align: center;" class="btn btn-outline-success my-2 my-sm-0" href="/PullTables">Pull Tables</a>
+
+                </div>
+            </div>
+            <br>
+            {% for pdfs in pdf_list %}
+            <div class="row">
+                <div class="col-6 col-centered d-flex justify-content-center">
+                    
+                    <div style="text-align: center;">{{pdfs["name"]}}</div>
+                    
+
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}
