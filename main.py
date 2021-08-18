@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, redirect, g, flash, url_for, 
 import os, sys, io, json, re
 import datetime
 import PyPDF2
+import pandas as pd
 #import google.oauth2.credentials
 import google_auth_oauthlib.flow
 #import googleapiclient.discovery
@@ -147,6 +148,7 @@ def PullTable():
     
     fh.seek(0)
     extracted_data = json.load(fh)
+    #fh.flush() 
 
     pub = []
     for data in extracted_data:
@@ -160,30 +162,26 @@ def PullTable():
         
         #saving new log file
         log_file = []
-        files_data = dict.fromkeys(['name', 'doi', 'status'])
+        #files_data = dict.fromkeys(['name', 'doi', 'status'])
 
-        for data in extracted_data:
-            files_data["doi"] = data["doi"]
-            files_data["name"] = data["name"]
+        for data_f in extracted_data:
+            files_data = dict.fromkeys(['name', 'doi', 'status'])
+            files_data["doi"] = data_f["doi"]
+            files_data["name"] = data_f["name"]
             files_data["status"] = "Processed"
             log_file.append(files_data)
-
+            #print(log_file)
+        
         # convert logs into JSON:
-        data = json.dumps(log_file)
+        data_j = json.dumps(log_file)
         folderId = get_folder_id(drive, "logs")
-        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+        json_byte = io.BytesIO(bytes(data_j, encoding='utf8'))
         name = datetime.datetime.now().strftime("%Y%m%d%H")
         save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")    # convert logs into JSON:
-        data = json.dumps(log_file)
-        folderId = get_folder_id(drive, "logs")
-        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
-        name = datetime.datetime.now().strftime("%Y%m%d%H")
-        save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
         move_file(service=drive, file_id=file_items[0]["id"],folder_id=get_folder_id(drive, "Archive"))
         flash ('Table processing complete!')
         return redirect(url_for('index'))
-        
 
     table_html = extracted_data[paper]["tables"][table_num] 
     table_html = header + table_html + footer 
@@ -191,14 +189,15 @@ def PullTable():
     page =  extracted_data[paper]["pages_urls"][table_num]
     page = re.sub("/view?.*", "/preview", page)
 
-    pub_data = pub[paper]
+    PDFurl =  extracted_data[paper]["PDF_url"]
+    PDFurl = re.sub("/view?.*", "/preview", PDFurl)
 
+    pub_data = pub[paper]
     max_tables = len(extracted_data[paper]["tables"])
      
-    
     return render_template('indexT.html',table_num = table_num, tables = page, 
                             table_html= rendered_table , pub_data = pub_data, 
-                            max_tables = max_tables)
+                            max_tables = max_tables, pdf_url = PDFurl)
 
 #------------------------------------------------------------------------------------------------
 @app.route('/extract')
@@ -343,19 +342,23 @@ def post_json():
         drive = get_service(API_SERVICE_SHEET, API_SHEET_VERSION)
         sheet = drive.spreadsheets()
 
-        table = request.get_json()
-        print(type(table))
-        
-        import pandas as pd
+        table = request.get_json()       
         df = pd.DataFrame(table)
         df.drop(df.columns[len(df.columns)-1], axis=1, inplace=True)
-        
+
+        for column in df.columns:
+            if df.loc[0,column]=="":
+                df.drop(columns=column, inplace=True)
+        df = df.rename(columns=df.iloc[0,0:])
+        df = df.drop([0])
+
         body = dict(majorDimension='ROWS', values = df.T.reset_index().T.values.tolist())
 
-        
         response = sheet.values().append(
             valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1",
             body=body).execute()
+        
+        print(response)
 
         return 'Sucesss', 200
 

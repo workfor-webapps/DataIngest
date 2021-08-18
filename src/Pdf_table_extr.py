@@ -194,15 +194,14 @@ def extract_tables(fh):
             
 
 
-            hyphen = [r'^\u002D', r'^\u05BE', r'^\u1806', r'^\u2010', r'^\u2011', r'^\u2012', r'^\u2013', r'^\u2014', r'^\uFE58', r'^\uFE63', r'^\uFF0D']
-            #df = df.replace('^–','-', regex=True) # this is added so excel can identify negative values 
-            df = df.replace('^0,','0.', regex=True) # this is added so excel can identify negative values
+            hyphen = [r'^\u002D', r'^\u05BE', r'^\u1806', r'^\u2010', r'^\u2011', r'^\u2012', r'^\u2013', r'^\u2014', r'^\u2015', 
+                      r'^\u207B', r'^\u208B', r'^\uFE58', r'^\uFE63', r'^\uFF0D', r'^\u2212', r'\uFF0D']
+            df = df.replace(regex=hyphen, value="-")
+            df = df.replace('^0,','0.', regex=True) 
             df = df.replace('^\.','0.', regex=True)
             df = df.replace(',','', regex=True) # this is added so excel can identify negative values
             df = df.replace('\*{1,4}$','',regex=True) # this is added so excel can identify numerical values 
-            df = df.replace('–', np.nan) # this is added so excel can identify NAN values
-            df = df.replace('-', np.nan) # this is added so excel can identify NAN values
-            df = df.replace(regex=hyphen, value="-")
+            df = df.replace('^-\.','-0.', regex=True)
             
             #drop if all/most column types are objects 
             numeric_values = len([df[column][i] for column in df.columns for i in range(0, len(df)) if str(df[column][i]).replace(".","").isnumeric()])
@@ -255,14 +254,6 @@ def extract_tables(fh):
     #fixing column names 
     for num in range(len(table_clean)):
         rows_with_nan=[]
-        #i = 1
-        #j = table_clean[num].columns.size
-        #for column in table_clean[num].columns:
-        #    if ("Unnamed" in column):
-        #        i+=1
-        #if i>j/2:
-        #    table_clean[num] = table_clean[num].rename(columns=table_clean[num].iloc[0,0:])
-        #    table_clean[num] = table_clean[num].drop([0])
         
         #re-indexing
         table_clean[num].index = range(len(table_clean[num]))   
@@ -282,7 +273,7 @@ def extract_tables(fh):
             table_clean[num] = table_clean[num].rename(columns={table_clean[num].columns[0]:str(table_clean[num].columns[1]).upper()})
             table_clean[num] = table_clean[num].drop(columns = [str(table_clean[num].columns[1])])
 
-        table_clean[num].columns.str.upper()
+        
         # for ind in table_clean[num].index:
         #     for col in table_clean[num].columns:
         #         try:
@@ -294,33 +285,93 @@ def extract_tables(fh):
         
 
         #spliting columns if values sperated by space
-        for column in table_clean[num].columns:
-            col = column.split(" ", 1)
-            if len(col) > 1:
-                new = table_clean[num][column].astype(str).str.split(" ", n = 1, expand = True)
-                if len(new.columns) > 1:
-                    #print(new)
-                    table_clean[num] = table_clean[num].drop(columns = [column])
-                    col0 = col[0]
-                    col1 = col[1]
-                    table_clean[num][col0] = new[0]
-                    table_clean[num][col1] = new[1]
+        if not table_clean[num].columns.is_unique:
+            unique_names = list(uniquify(list(table_clean[num].columns)))
+            table_clean[num].columns = unique_names
+
         
+        table_columns = list(table_clean[num].columns)
+
+        for column in table_columns:
+            col = str(column).split(" ", 1)
+            if len(col) > 1:
+                try:
+                    new = table_clean[num][column].astype(str).str.split(" ", n = 1, expand = True)
+                    new2 = new.dropna(axis=0, how='any')
+                    if "(" in new2.iloc[0,0]:
+                        continue
+                    if len(new.columns) > 1:
+                        #print(new)
+                        col0 = col[0]
+                        col1 = col[1]
+
+                        if col0 in list(table_clean[num].columns):
+                            col0 = col0+"_1"
+                        if col1 in list(table_clean[num].columns):
+                            col1 = col1+"_1"
+                        table_clean[num][col0] = new[0]
+                        table_clean[num][col1] = new[1]
+                        table_clean[num] = table_clean[num].drop(columns = [column])
+
+                        if not table_clean[num].columns.is_unique:
+                            unique_names = list(uniquify(list(table_clean[num].columns)))
+                            table_clean[num].columns = unique_names
+
+                except AttributeError:
+                    #print(table_clean[num][column])
+                    try:
+                        
+                        new_df = table_clean[num][column]
+                        if not new_df.columns.is_unique:
+                            unique_names = list(uniquify(list(new_df.columns)))
+                            new_df.columns = unique_names
+                            
+
+                        #
+                        for new_column in new_df.columns:
+                            if new_column in list(table_clean[num].columns):
+                                new_column1 = new_column + "_1"
+                            else:
+                                new_column1 = new_column
+
+                            table_clean[num][new_column1] = new_df[new_column]
+                        
+                        table_clean[num] = table_clean[num].drop(columns = [column])                            
+                    
+                    except:
+                        print("Error: ", new_df)
+
+                except KeyError:
+                    print("column= ", column)
+
+        
+        table_clean[num].columns.str.upper()
         df = table_clean[num]
-        hyphen = [r'^\u002D', r'^\u05BE', r'^\u1806', r'^\u2010', r'^\u2011', r'^\u2012', r'^\u2013', r'^\u2014', r'^\uFE58', r'^\uFE63', r'^\uFF0D']
-        #df = df.replace('^–','-', regex=True) # this is added so excel can identify negative values 
-        df = df.replace('^0,','0.', regex=True) # this is added so excel can identify negative values
+        hyphen = [r'^\u002D', r'^\u05BE', r'^\u1806', r'^\u2010', r'^\u2011', r'^\u2012', r'^\u2013', r'^\u2014', r'^\u2015', 
+                  r'^\u207B', r'^\u208B', r'^\uFE58', r'^\uFE63', r'^\uFF0D', r'^\u2212', r'\uFF0D']
+        df = df.replace(regex=hyphen, value="-")
+        df = df.replace('^0,','0.', regex=True) 
         df = df.replace('^\.','0.', regex=True)
         df = df.replace(',','', regex=True) # this is added so excel can identify negative values
         df = df.replace('\*{1,4}$','',regex=True) # this is added so excel can identify numerical values 
-        df = df.replace('–', np.nan) # this is added so excel can identify NAN values
-        df = df.replace('-', np.nan) # this is added so excel can identify NAN values
-        df = df.replace(regex=hyphen, value="-")
         df = df.replace('^-\.','-0.', regex=True)
+        df = df.replace(np.nan,'')
+        df = df.replace('nan','')
+        
+        
+        df.insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+        
+        df.columns.str.upper()
+        #adding the column names to rows
+        col_names = [[x for x in df.columns]]
+        col_names2 = [x for x in df.columns]
+        col_array = np.array(list(col_names))
+        df2 = pd.DataFrame(col_array, columns=col_names2)
+        
+        table_clean[num] = pd.concat([df2,df], axis=0, ignore_index= True, join="outer")
+        table_clean[num].columns = [str(x+1) for x in range(len(table_clean[num].columns))]
 
-        table_clean[num] = df
-
-        table_clean[num].insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+        
         #convert dataframes to json objects
         #table_clean[num] = table_clean[num].to_json(orient='table')
         table_clean[num] = table_clean[num].to_html(index=False, justify="left", na_rep="",\
@@ -397,6 +448,20 @@ def write_to_excel(writer, jj, paper_title, table_clean):
         start_row += table_clean[ii].shape[0]+1
     writer.save()
     return 0
+
+def uniquify(df_columns):
+    seen = set()
+
+    for item in df_columns:
+        fudge = 1
+        newitem = item
+
+        while newitem in seen:
+            fudge += 1
+            newitem = "{}_{}".format(item, fudge)
+
+        yield newitem
+        seen.add(newitem)
 
 #---------------------------------------------------------------------------------------
 if __name__ == '__main__':

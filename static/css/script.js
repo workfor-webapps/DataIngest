@@ -28,18 +28,17 @@ function html2json() {
       rows.push(row);
   });
   
-
   //construct an HTTP request
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', '/post_json', true);
+  xhr.open('POST', '/post_json', false);
   xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
 
   // send the collected data as JSON
   xhr.send(JSON.stringify(rows));
 
   //console.log(JSON.stringify(rows));
-
   // reload page
+
   var maxt = $('#my-data').data('value');
   var url = window.location.href;    
   var url2 = replaceUrlParam (url, 'table_num', maxt); 
@@ -166,7 +165,7 @@ function applyAll() {
   var x = document.getElementById("concept").value; 
   var table = document.getElementById("pdf");
   var r = document.getElementById("pdf").rows.length;
-  for (i=1; i<r; i++) {
+  for (i=2; i<r; i++) {
       table.rows[i].cells[0].innerHTML = x
   }
   
@@ -179,7 +178,7 @@ function ClearAll() {
   
   var table = document.getElementById("pdf");
   var r = document.getElementById("pdf").rows.length;
-  for (i=1; i<r; i++) {
+  for (i=2; i<r; i++) {
       table.rows[i].cells[0].innerHTML = ""
   }
   
