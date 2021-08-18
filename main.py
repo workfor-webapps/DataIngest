@@ -228,8 +228,6 @@ def extract():
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
-
-        
         
         while done is False:
             status, done = downloader.next_chunk()
@@ -290,7 +288,6 @@ def extract():
         log_file.append(files_log)
         data_file.append(files_data)
 
-
     # convert logs into JSON:
     data = json.dumps(log_file)
     folderId = get_folder_id(drive, "logs")
@@ -332,7 +329,6 @@ def list():
 
     return render_template('index.html', files_data=logs, file_numbers = file_num)
     
-
 #------------------------------------------------------------------------------------------------
 @app.route('/post_json', methods = ['POST'])
 def post_json():
@@ -342,7 +338,10 @@ def post_json():
         drive = get_service(API_SERVICE_SHEET, API_SHEET_VERSION)
         sheet = drive.spreadsheets()
 
-        table = request.get_json()       
+        #table = request.get_json() 
+        rec_data = request.form
+        table = json.loads(rec_data["table"])
+
         df = pd.DataFrame(table)
         df.drop(df.columns[len(df.columns)-1], axis=1, inplace=True)
 
@@ -351,6 +350,11 @@ def post_json():
                 df.drop(columns=column, inplace=True)
         df = df.rename(columns=df.iloc[0,0:])
         df = df.drop([0])
+
+        df["Refrence Concept"] = rec_data["Ref_Con"]
+        df["Concept Category"] = rec_data["Con_Cat"]
+        df["Concept direction"] = rec_data["con_dir"]
+        df["Effect type"] = rec_data["Eff_Type"]
 
         body = dict(majorDimension='ROWS', values = df.T.reset_index().T.values.tolist())
 

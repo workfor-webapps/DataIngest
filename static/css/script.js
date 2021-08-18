@@ -27,15 +27,24 @@ function html2json() {
      
       rows.push(row);
   });
+  document.getElementById("concept_form").submit()
+  var ref_con =  $("#ref_con option:selected").text();
+  var con_cat =  $("#con_cat option:selected").text();
+  var con_dir =  $("#con_dir option:selected").text();
+  var eff_type =  $("#eff_type option:selected").text();
   
   //construct an HTTP request
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/post_json', false);
-  xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-
+  //xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+  //xhr.send(JSON.stringify(rows));
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+  var send_data ="table=" + JSON.stringify(rows) + "&Ref_Con="+ ref_con +
+                  "&Con_Cat=" + con_cat + "&Con_Dir=" + con_dir + "&Eff_Type=" + eff_type;
   // send the collected data as JSON
-  xhr.send(JSON.stringify(rows));
+  xhr.send(send_data);
 
+  //
   //console.log(JSON.stringify(rows));
   // reload page
 
