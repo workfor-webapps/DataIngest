@@ -5,7 +5,9 @@
 <br>
 {% block body %}
 
-<meta id="pub-data" data-value="{{pub_data}}">
+<meta id="pub_data" value="{{pub_data['doi']}}">
+<meta id="table_number" value="{{table_num}}">
+
 <!-- <div class="jumbotron"> -->
     <div class="container-fluid">
         <div class="row">
@@ -32,7 +34,7 @@
                 
                    <div class="row form-group">
                        <div class="col text-right ">
-                           <label for="ref_con"><b>REFERENCE CONCEPT</b></label>
+                           <label for="ref_con"><b>Reference Concept</b></label>
 
                        </div>
                        <div class="col">
@@ -49,7 +51,7 @@
 
                    <div class="row form-group">
                        <div class="col text-right">
-                           <label for="con_cat"><b>CONCEPT CATEGORY</b></label>
+                           <label for="con_cat"><b>Concept Theme</b></label>
 
                        </div>
                        <div class="col">
@@ -63,7 +65,7 @@
                    </div>
                    <div class="row form-group">
                        <div class="col text-right">
-                           <label for="con_dir"><b>CONCEPT DIRECTION</b></label>
+                           <label for="con_dir"><b>Concept Direction</b></label>
 
                        </div>
                        <div class="col">
@@ -77,7 +79,7 @@
                    </div>
                    <div class="row form-group">
                        <div class="col text-right">
-                           <label for="eff_type"><b>EFFECT TYPE</b></b></label>
+                           <label for="eff_type"><b>Effect Type</b></b></label>
 
                        </div>
                        <div class="col">
@@ -124,7 +126,7 @@
                 <div class="row">
                     <div class="col-9">
                         <form class="form-inline" >
-                            <label for="concept" class="mr-sm-2">CONCEPT CATEGORY :</label>
+                            <label for="concept" class="mr-sm-2">Concept Category :</label>
                             <input type="concept" class="form-control mb-2 mr-sm-2" placeholder="concept" id="concept">
                             <div class="form-check mb-2 mr-sm-2"></div>
                             <a class="btn btn-info btn-sm" onclick="applyAll()">Apply to all</a>

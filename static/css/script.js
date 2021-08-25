@@ -32,6 +32,10 @@ function html2json() {
   var con_cat =  $("#con_cat option:selected").text();
   var con_dir =  $("#con_dir option:selected").text();
   var eff_type =  $("#eff_type option:selected").text();
+  //var pub_data =  $("#pub_data").value;
+  //var table_number =  $("#table_number").value;
+  var pub_doi = document.getElementById("pub_data").getAttribute('value');
+  var table_num = document.getElementById("table_number").getAttribute('value');
   
   //construct an HTTP request
   var xhr = new XMLHttpRequest();
@@ -40,7 +44,8 @@ function html2json() {
   //xhr.send(JSON.stringify(rows));
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
   var send_data ="table=" + JSON.stringify(rows) + "&Ref_Con="+ ref_con +
-                  "&Con_Cat=" + con_cat + "&Con_Dir=" + con_dir + "&Eff_Type=" + eff_type;
+                  "&Con_Cat=" + con_cat + "&Con_Dir=" + con_dir + "&Eff_Type=" + eff_type +
+                  "&DOI=" + pub_doi + "&Table_num=" + table_num;
   // send the collected data as JSON
   xhr.send(send_data);
 

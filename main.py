@@ -351,10 +351,17 @@ def post_json():
         df = df.rename(columns=df.iloc[0,0:])
         df = df.drop([0])
 
-        df["Refrence Concept"] = rec_data["Ref_Con"]
-        df["Concept Category"] = rec_data["Con_Cat"]
-        df["Concept direction"] = rec_data["con_dir"]
-        df["Effect type"] = rec_data["Eff_Type"]
+
+        print(rec_data["DOI"])
+
+        df["ThemeA"] = rec_data["Ref_Con"]
+        df["ConceptA"] = rec_data["Con_Cat"]
+        df["ConceptADirection"] = rec_data["Con_Dir"]
+        df["EffectType"] = rec_data["Eff_Type"]
+        df["DOI"] = rec_data["DOI"]
+        df["TableID"] = rec_data["Table_num"]
+
+        #col_order = ["ThemeA","ConceptA", "ConceptADirection", "ConceptB", "ThemeB", "EffectType", "DOI", "Citation", "TableID", "k","N",  ]
 
         body = dict(majorDimension='ROWS', values = df.T.reset_index().T.values.tolist())
 
@@ -362,10 +369,10 @@ def post_json():
             valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1",
             body=body).execute()
         
-        print(response)
+        #print(response)
 
         return 'Sucesss', 200
 
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8888)
+    app.run(debug=True, host='localhost', port=8888)
