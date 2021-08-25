@@ -6,6 +6,7 @@ from src.Pdf_table_extr import *
 from flask import Flask, render_template, request, redirect, g, flash, url_for, session, render_template_string
 import os, sys, io, json, re
 import datetime
+import logging
 import PyPDF2
 import pandas as pd
 #import google.oauth2.credentials
@@ -375,4 +376,4 @@ def post_json():
 
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=8888)
+    app.run(debug=True, host='localhost', port=8080)
