@@ -8,11 +8,6 @@ function html2json() {
       header.push($(this).html());
   });
   
-  //header.push("Title")
-  //var pubData = $('#pub-data').data('value');
-  //var title = pubData;
-
-
   $table.find("tbody tr").each(function () {
       var row = {};
 
@@ -21,19 +16,16 @@ function html2json() {
               value = $(this).html();
 
           row[key] = value;
-          
       });
-
-     
+    
       rows.push(row);
   });
+
   document.getElementById("concept_form").submit()
   var ref_con =  $("#ref_con option:selected").text();
   var con_cat =  $("#con_cat option:selected").text();
   var con_dir =  $("#con_dir option:selected").text();
   var eff_type =  $("#eff_type option:selected").text();
-  //var pub_data =  $("#pub_data").value;
-  //var table_number =  $("#table_number").value;
   var pub_doi = document.getElementById("pub_data").getAttribute('value');
   var table_num = document.getElementById("table_number").getAttribute('value');
   
@@ -46,13 +38,11 @@ function html2json() {
   var send_data ="table=" + JSON.stringify(rows) + "&Ref_Con="+ ref_con +
                   "&Con_Cat=" + con_cat + "&Con_Dir=" + con_dir + "&Eff_Type=" + eff_type +
                   "&DOI=" + pub_doi + "&Table_num=" + table_num;
+  
   // send the collected data as JSON
   xhr.send(send_data);
 
-  //
-  //console.log(JSON.stringify(rows));
   // reload page
-
   var maxt = $('#my-data').data('value');
   var url = window.location.href;    
   var url2 = replaceUrlParam (url, 'table_num', maxt); 
@@ -64,7 +54,6 @@ function html2json() {
 //------------------------------------------------------------------------------------------------
 function replaceUrlParam(url, paramName, max_t)
 {
-
     var value = GetURLParameter(paramName);
     
      if (value == null) {
@@ -77,10 +66,10 @@ function replaceUrlParam(url, paramName, max_t)
     }
     
     if (value >= max_t) {
-
       
       url = replaceUrlParam (url, 'paper', 100);
       var value = 0;
+      window.alert ("processing tables for next paper")
     }
  
     var pattern = new RegExp('\\b('+paramName+'=).*?(&|#|$)');

@@ -16,11 +16,12 @@ from googleapiclient.http import MediaIoBaseDownload
 import google.cloud.logging
 
 # Instantiates a client
-client = google.cloud.logging.Client()
-handler = client.get_default_handler()
+#client = google.cloud.logging.Client()
+#handler = client.get_default_handler()
+handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-client.setup_logging()
+#client.setup_logging()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
@@ -83,7 +84,7 @@ def login():
             return redirect(url_for('login'))
         else:
             session['user_id'] = user[0].id
-            logger.info('%s logged in'%(user[0].id))
+            logger.info('User with ID:%s logged in'%(user[0].id))
             return redirect(url_for('index'))
     
     return render_template('login.html')
@@ -133,6 +134,8 @@ def oauth2callback():
     dict = credentials_to_dict(credentials)
     #store_cred(dict)
     session['credentials'] = dict
+    
+    logger.info('UserID %s has been authorized access to API' %(session['user_id']) )
 
     return redirect(url_for('list'))
 
@@ -149,6 +152,7 @@ def PullTable():
 
     if not file_items:
         flash ('No table for extraction!')
+        logger.info('No table is ready for extraction by %s' %(session['user_id']))
         return redirect(url_for('index'))
 
     requested = drive.files().get_media(fileId=file_items[0]["id"])
@@ -161,7 +165,7 @@ def PullTable():
     
     fh.seek(0)
     extracted_data = json.load(fh)
-    #fh.flush() 
+    
 
     pub = []
     for data in extracted_data:
@@ -170,12 +174,12 @@ def PullTable():
     paper = request.args.get("paper" , default = 0, type = int)
     table_num = request.args.get("table_num" , default = 0, type = int)
 
+
     if paper >= len(extracted_data) :
         empty_Images_folder(drive)
         
         #saving new log file
         log_file = []
-        #files_data = dict.fromkeys(['name', 'doi', 'status'])
 
         for data_f in extracted_data:
             files_data = dict.fromkeys(['name', 'doi', 'status'])
@@ -195,6 +199,8 @@ def PullTable():
         move_file(service=drive, file_id=file_items[0]["id"],folder_id=get_folder_id(drive, "Archive"))
         flash ('Table processing complete!')
         return redirect(url_for('index'))
+    
+    logger.info('Table %s from paper with DOI: %s is being processed by userID %s' %(table_num, extracted_data[paper]["doi"] , session['user_id']))
 
     table_html = extracted_data[paper]["tables"][table_num] 
     table_html = header + table_html + footer 
@@ -215,7 +221,7 @@ def PullTable():
 #------------------------------------------------------------------------------------------------
 @app.route('/extract')
 def extract():
-    
+ 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
     #get files metadata in PDEA folder on google drive
@@ -228,14 +234,16 @@ def extract():
     if not file_items:
         return 'No new file', 200
 
+
+
     for file in file_items:
         files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
         files_log = dict.fromkeys(['name', 'doi', 'status'])
         
         files_data["PDF_url"] = file["webViewLink"]
         files_data["name"] = file["name"]
-        files_log["name"] = file["name"]
-        #1. download the file 
+        files_log["name"] = file["name"]     
+
         request = drive.files().get_media(fileId=file["id"])
 
         fh = io.BytesIO()
@@ -249,7 +257,7 @@ def extract():
         doi = get_doi(fh)
         files_data["doi"] = doi
         files_log["doi"] = doi
-        
+
         if doi == "DOI not found!": # move to "nodoi" folder"
             file_id = file["id"]
             folder_id = get_folder_id(drive, "NoDOI")
@@ -258,8 +266,11 @@ def extract():
         else:
             #state = store_doi(doi)
             state = "New"
-            
+            logger.info('Extracting DOI: %s' %doi)
+
+
             if state == "Old":
+                logger.info('DOI: %s is already in database' %doi)
                 file_id = file["id"]
                 folder_id = get_folder_id(drive, "Archive")
                 move_file(service=drive, file_id=file_id,folder_id=folder_id)
@@ -272,6 +283,8 @@ def extract():
                 files_data["pages"] = pages
                 files_data["status"] = "Ready"
                 files_log["status"] = "Ready"
+
+                logger.info('%s tables are extracted from DOI: %s' %(len(tables), doi))
 
                 # get and save pages
                 pages_url = []
@@ -334,9 +347,7 @@ def list():
             status, done = downloader.next_chunk()
 
     fh.seek(0)
-    logs = json.load(fh)
-    print(logs)
-    
+    logs = json.load(fh)  
     file_num = len(logs)
     fh.flush()
 
@@ -364,9 +375,6 @@ def post_json():
         df = df.rename(columns=df.iloc[0,0:])
         df = df.drop([0])
 
-
-        print(rec_data["DOI"])
-
         df["ThemeA"] = rec_data["Ref_Con"]
         df["ConceptA"] = rec_data["Con_Cat"]
         df["ConceptADirection"] = rec_data["Con_Dir"]
@@ -382,7 +390,7 @@ def post_json():
             valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1",
             body=body).execute()
         
-        #print(response)
+        logger.info("Table %s from DOI: %s is added to the spreadsheet by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
 
         return 'Sucesss', 200
 
