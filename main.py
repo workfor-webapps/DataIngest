@@ -13,6 +13,17 @@ import pandas as pd
 import google_auth_oauthlib.flow
 #import googleapiclient.discovery
 from googleapiclient.http import MediaIoBaseDownload
+import google.cloud.logging
+
+# Instantiates a client
+client = google.cloud.logging.Client()
+handler = client.get_default_handler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+client.setup_logging()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 
 CLIENT_SECRETS_FILE = "client_secret.json"
@@ -72,6 +83,7 @@ def login():
             return redirect(url_for('login'))
         else:
             session['user_id'] = user[0].id
+            logger.info('%s logged in'%(user[0].id))
             return redirect(url_for('index'))
     
     return render_template('login.html')

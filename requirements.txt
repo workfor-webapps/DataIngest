@@ -4,6 +4,8 @@ google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.4.4
 google-api-core==1.30.0
 google-cloud-datastore==2.1.3
+google-cloud-logging
+google_spreadsheet
 tabula-py
 pandas
 numpy
@@ -15,6 +17,6 @@ sphinx
 sphinx-rtd-theme
 requests
 json2html
-google_spreadsheet
 JPype1
+
 
