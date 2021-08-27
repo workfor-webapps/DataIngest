@@ -54,6 +54,6 @@ RUN pip install -r requirements.txt
 ##ENV JAVA_HOME="/usr/lib/jvm/java-1.8-openjdk"
 
 ####
-EXPOSE 8888
+EXPOSE 8080
 
 CMD ["python3", "main.py"]

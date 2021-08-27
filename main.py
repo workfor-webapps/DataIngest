@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES  = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets']
 API_SERVICE_DRIVE = 'drive'
@@ -396,4 +395,4 @@ def post_json():
 
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=8080)
+    app.run(debug=True, host='0.0.0.0', port=8080)
