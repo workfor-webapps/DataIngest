@@ -16,12 +16,12 @@ from googleapiclient.http import MediaIoBaseDownload
 import google.cloud.logging
 
 # Instantiates a client
-client = google.cloud.logging.Client()
-handler = client.get_default_handler()
-#handler = logging.StreamHandler()
+#client = google.cloud.logging.Client()
+#handler = client.get_default_handler()
+handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-client.setup_logging()
+#client.setup_logging()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
@@ -361,7 +361,6 @@ def post_json():
         drive = get_service(API_SERVICE_SHEET, API_SHEET_VERSION)
         sheet = drive.spreadsheets()
 
-        #table = request.get_json() 
         rec_data = request.form
         table = json.loads(rec_data["table"])
 
@@ -381,10 +380,12 @@ def post_json():
         df["DOI"] = rec_data["DOI"]
         df["TableID"] = rec_data["Table_num"]
 
-        #col_order = ["ThemeA","ConceptA", "ConceptADirection", "ConceptB", "ThemeB", "EffectType", "DOI", "Citation", "TableID", "k","N",  ]
+        list_col = df.column.tolist()
+        col_order = ["ThemeA","ConceptA", "ConceptADirection", "ConceptB", "ThemeB", "EffectType", "DOI", "TableID", "k","N"]
+        list_ordered = col_order + [x for x in list_col if x not in col_order]
+        df = df[list_ordered]
 
         body = dict(majorDimension='ROWS', values = df.T.reset_index().T.values.tolist())
-
         response = sheet.values().append(
             valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1",
             body=body).execute()
@@ -395,4 +396,4 @@ def post_json():
 
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=True, host='localhost', port=8080)
