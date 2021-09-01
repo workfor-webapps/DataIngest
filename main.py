@@ -16,12 +16,12 @@ from googleapiclient.http import MediaIoBaseDownload
 import google.cloud.logging
 
 # Instantiates a client
-#client = google.cloud.logging.Client()
-#handler = client.get_default_handler()
-handler = logging.StreamHandler()
+client = google.cloud.logging.Client()
+handler = client.get_default_handler()
+#handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-#client.setup_logging()
+client.setup_logging()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
