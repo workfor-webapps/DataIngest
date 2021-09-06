@@ -12,9 +12,6 @@ import re
 import crossref_commons.retrieval
 from pdfminer import high_level
 
-
-
-
 def excel_init():
     
     """ This function initializes an excel writer and creates Processed excel file.
@@ -165,24 +162,22 @@ def extract_tables(fh):
     #initialize table-clean
     table_clean = []
     table_pages = []
-    #******************************************************************
+
     #******************** Looping over pages for each PDF file ********
-    #loop over pages
     for pg in range(0,pages):
-        #************************************************************************************************************
-        #***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0********
-        #************************************************************************************************************
+
+    #************************************************************************************************************
+    #***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0 *******
+    #************************************************************************************************************
 
         file_p.seek(0)
         tables = tabula.read_pdf(file_p, multiple_tables=True, pages=str(pg+1)) # finding tables using tabula
         
-        #cleaning tables
         i = 0
         j = len(tables)
         z = 0 # This is in case the numeric columns cannot be fixed by rotation
         while i < j:
 
-            #convert to pandas dataframe
             df = pd.DataFrame(tables[(i)])
 
             if (df.shape[1]<2) or (df.shape[0]<2): #drop based on the shape - if smaler than 2 in row or column
@@ -192,15 +187,13 @@ def extract_tables(fh):
                 i+=1
                 continue
             
-
-
             hyphen = [r'^\u002D', r'^\u05BE', r'^\u1806', r'^\u2010', r'^\u2011', r'^\u2012', r'^\u2013', r'^\u2014', r'^\u2015', 
                       r'^\u207B', r'^\u208B', r'^\uFE58', r'^\uFE63', r'^\uFF0D', r'^\u2212', r'\uFF0D']
-            df = df.replace(regex=hyphen, value="-")
+            df = df.replace(regex=hyphen, value="-")# this is added so excel can identify negative values
             df = df.replace('^0,','0.', regex=True) 
             df = df.replace('^\.','0.', regex=True)
-            df = df.replace(',','', regex=True) # this is added so excel can identify negative values
-            df = df.replace('\*{1,4}$','',regex=True) # this is added so excel can identify numerical values 
+            df = df.replace(',','', regex=True) 
+            df = df.replace('\*{1,4}$','',regex=True) 
             df = df.replace('^-\.','-0.', regex=True)
             
             #drop if all/most column types are objects 
