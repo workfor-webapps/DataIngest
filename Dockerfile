@@ -44,7 +44,7 @@ COPY ./ /app/.
 WORKDIR /app
 
 ENV FLASK_APP main.py
-ENV FLASK_RUN_HOST 0.0.0.0
+ENV FLASK_RUN_HOST 127.0.0.1
 ENV FLASK_RUN_PORT 8080
 
 RUN pip install -r requirements.txt

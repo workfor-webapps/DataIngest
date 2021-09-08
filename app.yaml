@@ -1,3 +1,8 @@
 runtime: costom
 env: flex
 entrypoint: gunicorn -b :$PORT main:app
+
+
+env_variables:
+    CLOUD_STORAGE_BUCKET: dataingest-26020.appspot.com 
+    

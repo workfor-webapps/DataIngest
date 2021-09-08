@@ -169,6 +169,7 @@ def get_folder_id(service, name):
      pageSize=10, fields="nextPageToken, files(id, name)").execute()
     # this gives us a list of all folders with that name
     folderIdResult = folderId.get('files', [])
+    if not folderIdResult: return 0
     # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
     id = folderIdResult[0].get('id')
     return id
@@ -186,6 +187,8 @@ def get_files(service, folder_id):
     """
     
     id = folder_id
+
+    if id == 0: return 0
 
     # Now, using the folder ID gotten above, we get all the files from
     # that particular folder

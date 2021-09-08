@@ -224,7 +224,7 @@ def extract():
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
     #get files metadata in PDEA folder on google drive
-    folder_id = get_folder_id(drive, "New")
+    folder_id = get_folder_id(drive, "PDFqueue")
     file_items = get_files(drive, folder_id)
     
     log_file = []
@@ -266,7 +266,6 @@ def extract():
             #state = store_doi(doi)
             state = "New"
             logger.info('Extracting DOI: %s' %doi)
-
 
             if state == "Old":
                 logger.info('DOI: %s is already in database' %doi)
@@ -338,17 +337,23 @@ def list():
     
      #get files metadata in PDEA folder on google drive
     file_items = get_files(drive, get_folder_id(drive, "logs"))
-    request = drive.files().get_media(fileId=file_items[0]["id"])
-    fh = io.BytesIO()
-    downloader = MediaIoBaseDownload(fh, request)
-    done = False
-    while done is False:
-            status, done = downloader.next_chunk()
 
-    fh.seek(0)
-    logs = json.load(fh)  
-    file_num = len(logs)
-    fh.flush()
+    if file_items == 0:
+         file_num = 0
+         logs = {"name":"-","doi":"-","status":"-"}
+    else:
+
+        request = drive.files().get_media(fileId=file_items[0]["id"])
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while done is False:
+                status, done = downloader.next_chunk()
+
+        fh.seek(0)
+        logs = json.load(fh)  
+        file_num = len(logs)
+        fh.flush()
 
     return render_template('index.html', files_data=logs, file_numbers = file_num)
     
@@ -372,16 +377,19 @@ def post_json():
                 df.drop(columns=column, inplace=True)
         df = df.rename(columns=df.iloc[0,0:])
         df = df.drop([0])
-
+        df.columns = df.columns.str.upper()
+        
         df["ThemeA"] = rec_data["Ref_Con"]
         df["ConceptA"] = rec_data["Con_Cat"]
         df["ConceptADirection"] = rec_data["Con_Dir"]
         df["EffectType"] = rec_data["Eff_Type"]
         df["DOI"] = rec_data["DOI"]
         df["TableID"] = rec_data["Table_num"]
+        df["Citation"] = "get_citation(doi)"
 
-        list_col = df.column.tolist()
-        col_order = ["ThemeA","ConceptA", "ConceptADirection", "ConceptB", "ThemeB", "EffectType", "DOI", "TableID", "k","N"]
+        
+        list_col = df.columns.tolist()
+        col_order = ["ThemeA","ConceptA", "ConceptADirection", "ConceptB", "ThemeB", "EffectType", "DOI","Citation", "TableID", "K","N"]
         list_ordered = col_order + [x for x in list_col if x not in col_order]
         df = df[list_ordered]
 
@@ -396,4 +404,4 @@ def post_json():
 
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=8080)
+    app.run(debug=True, host='127.0.0.1', port=8080)
