@@ -32,7 +32,7 @@ API_SERVICE_DRIVE = 'drive'
 API_SERVICE_SHEET = 'sheets'
 API_DRIVE_VERSION = 'v3'
 API_SHEET_VERSION = 'v4'
-SPREADSHEETID = "1on5td4NHeXA1JY9bfRrJGv6kNnX4YRdb2NtA2nDKu0U"
+SPREADSHEETID = "1PyzArReUyKQAnYbBWkMDzUjNSw194HmckzCkmjt9_3A"
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 class User:
@@ -147,7 +147,7 @@ def PullTable():
     footer = "\n{% endblock %}"
 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
-    file_items = get_files(drive, get_folder_id(drive, "JsonTable"))  
+    file_items = get_files(drive, get_folder_id(drive, "Json"))  
 
     if not file_items:
         flash ('No table for extraction!')
@@ -190,12 +190,12 @@ def PullTable():
         
         # convert logs into JSON:
         data_j = json.dumps(log_file)
-        folderId = get_folder_id(drive, "logs")
+        folderId = get_folder_id(drive, "Logs")
         json_byte = io.BytesIO(bytes(data_j, encoding='utf8'))
         name = datetime.datetime.now().strftime("%Y%m%d%H")
         save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")    # convert logs into JSON:
 
-        move_file(service=drive, file_id=file_items[0]["id"],folder_id=get_folder_id(drive, "Archive"))
+        move_file(service=drive, file_id=file_items[0]["id"],folder_id=get_folder_id(drive, "PDFcomplete"))
         flash ('Table processing complete!')
         return redirect(url_for('index'))
     
@@ -259,7 +259,8 @@ def extract():
 
         if doi == "DOI not found!": # move to "nodoi" folder"
             file_id = file["id"]
-            folder_id = get_folder_id(drive, "NoDOI")
+            folder_id = get_folder_id(drive, "PDFreview")
+            logger.info('DOI not found in one PDF. Moved to PDFreview folder')
             move_file(service=drive, file_id=file_id,folder_id=folder_id)
             files_log["status"] = "Failed"
         else:
@@ -295,7 +296,7 @@ def extract():
                     pdf_writer.write(pdf_page_bytes)
 
                     #save pdf pages to images folder
-                    folderId = get_folder_id(drive, "Images")
+                    folderId = get_folder_id(drive, "PDF_PageImage")
                     P_id, P_url = save_files(service=drive, data=pdf_page_bytes, 
                                             name=doi+str(page), folderId= folderId, 
                                             mimetype = "application/pdf")
@@ -304,7 +305,7 @@ def extract():
                 
                 files_data["pages_urls"] = pages_url
 
-                folder_id = get_folder_id(drive, "Archive")
+                folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file["id"],folder_id=folder_id)
 
 
@@ -314,14 +315,14 @@ def extract():
 
     # convert logs into JSON:
     data = json.dumps(log_file)
-    folderId = get_folder_id(drive, "logs")
+    folderId = get_folder_id(drive, "Logs")
     json_byte = io.BytesIO(bytes(data, encoding='utf8'))
     name = datetime.datetime.now().strftime("%Y%m%d%H")
     save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
     # convert tables into JSON:
     data = json.dumps(data_file)
-    folderId = get_folder_id(drive, "JsonTable")
+    folderId = get_folder_id(drive, "Json")
     json_byte = io.BytesIO(bytes(data, encoding='utf8'))
     name = datetime.datetime.now().strftime("%Y%m%d%H") 
     save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
@@ -336,9 +337,9 @@ def list():
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
     
      #get files metadata in PDEA folder on google drive
-    file_items = get_files(drive, get_folder_id(drive, "logs"))
+    file_items = get_files(drive, get_folder_id(drive, "Logs"))
 
-    if file_items == 0:
+    if (file_items == 0) or (not file_items):
          file_num = 0
          logs = {"name":"-","doi":"-","status":"-"}
     else:
@@ -387,9 +388,23 @@ def post_json():
         df["TableID"] = rec_data["Table_num"]
         df["Citation"] = "get_citation(doi)"
 
+        df["ConceptB"] = ""
+        df["ThemeB"] = ""
+
         
+        df["EffectSize"] = ""
+        df["EffectSizeType"] = "-"
+
+        #checking if R D P columns are present in the table
+        for col in ["D", "R", "P"]:
+            if col in df.columns.tolist():
+                df["EffectSize"] = df[col]
+                df["EffectSizeType"] = col
+                break
+                
         list_col = df.columns.tolist()
-        col_order = ["ThemeA","ConceptA", "ConceptADirection", "ConceptB", "ThemeB", "EffectType", "DOI","Citation", "TableID", "K","N"]
+        col_order = ["ThemeA","ConceptA", "ConceptADirection", "ConceptB", "ThemeB", "EffectType", 
+                     "DOI","Citation", "TableID", "K","N", "EffectSize", "EffectSizeType"]
         list_ordered = col_order + [x for x in list_col if x not in col_order]
         df = df[list_ordered]
 

@@ -19,7 +19,7 @@ def store_cred(credentials):
     datastore_client = datastore.Client()
     #Id for cred entity in datastore
     kind = 'drive_cred'
-    id = 5644004762845184
+    id = 5634161670881280 
     with datastore_client.transaction():
         key = datastore_client.key(kind, id)
         entity = datastore_client.get(key=key)
@@ -40,7 +40,7 @@ def get_cred():
     """
     datastore_client = datastore.Client()
     kind = 'drive_cred'
-    id = 5644004762845184 
+    id = 5634161670881280 
     key = datastore_client.key(kind, id)
     credentials = datastore_client.get(key=key)
       
@@ -232,7 +232,7 @@ def empty_Images_folder(service):
     :type service: service
     """
     # First, get the folder ID by querying by mimeType and name
-    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'Images'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
+    folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'PDF_PageImage'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
     # this gives us a list of all folders with that name
     folderIdResult = folderId.get('files', [])
     # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
