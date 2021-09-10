@@ -161,7 +161,7 @@ def extract_tables(fh):
     file_p = fh# path_files
     #initialize table-clean
     table_clean = []
-    table_pages = []
+    table_pages = [[]]
 
     #******************** Looping over pages for each PDF file ********
     for pg in range(0,pages):
@@ -169,7 +169,7 @@ def extract_tables(fh):
     #************************************************************************************************************
     #***************** NOTE: Tabula starts pages from 1 and PyPDF2 get-page() start indexing pages from 0 *******
     #************************************************************************************************************
-
+        Rot = False
         file_p.seek(0)
         tables = tabula.read_pdf(file_p, multiple_tables=True, pages=str(pg+1)) # finding tables using tabula
         
@@ -215,14 +215,15 @@ def extract_tables(fh):
                 df = df.drop([0])
         
 
-            #Second check if a page is rotated- if columns are numeric it is possibly rotated
+            #check if a page is rotated- if columns are numeric it is possibly rotated
             x = [column for column in df.columns if str(column).replace(".","").isnumeric()] #list of numerical columns
             if len(x) > 1 and z < 3:
-                pdf_writer = PyPDF2.PdfFileWriter()
 
+                pdf_writer = PyPDF2.PdfFileWriter()
                 pdf_page = pdf_file.getPage(pg)
                 pdf_page.rotateClockwise(90)  # rotate Clockwise()
-                if z==1 : pdf_page.scaleBy(0.5)         # scale 
+                Rot = True #To save a rotated version
+                if z==1 : pdf_page.scaleBy(0.5) # scale 
                 pdf_writer.addPage(pdf_page)
 
                 pdf_bytes = io.BytesIO()
@@ -240,7 +241,7 @@ def extract_tables(fh):
 
             #add to table clean
             table_clean.append(df)
-            table_pages.append(pg+1)
+            table_pages.append([pg+1, Rot])
             i+=1
     #************************************* end of pages loop*********************************************
 

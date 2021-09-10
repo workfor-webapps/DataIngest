@@ -69,7 +69,8 @@ function replaceUrlParam(url, paramName, max_t)
       
       url = replaceUrlParam (url, 'paper', 100);
       var value = 0;
-      window.alert ("processing tables for next paper")
+      //alert ("processing tables for next paper");
+      window.alert("Processing next paper (if any)");
     }
  
     var pattern = new RegExp('\\b('+paramName+'=).*?(&|#|$)');

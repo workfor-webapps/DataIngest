@@ -289,7 +289,11 @@ def extract():
                 pages_url = []
                 for page in pages:
                     pdf_file = PyPDF2.PdfFileReader(fh)
-                    pdf_page = pdf_file.getPage(page-1)
+                    pdf_page = pdf_file.getPage(page[0]-1)
+                    
+                    if page[0]: # if rotated page
+                         pdf_page.rotateClockwise(90)
+
                     pdf_writer = PyPDF2.PdfFileWriter()
                     pdf_writer.addPage(pdf_page)
                     pdf_page_bytes = io.BytesIO()
@@ -298,9 +302,9 @@ def extract():
                     #save pdf pages to images folder
                     folderId = get_folder_id(drive, "PDF_PageImage")
                     P_id, P_url = save_files(service=drive, data=pdf_page_bytes, 
-                                            name=doi+str(page), folderId= folderId, 
+                                            name=doi+str(page[0]), folderId= folderId, 
                                             mimetype = "application/pdf")
-                    #P_url = re.sub("/view?*", "/preview", P_url)
+                    #P_url = re.sub("/view?*", "/preview", P_url) 
                     pages_url.append(P_url)
                 
                 files_data["pages_urls"] = pages_url
@@ -367,6 +371,11 @@ def post_json():
         drive = get_service(API_SERVICE_SHEET, API_SHEET_VERSION)
         sheet = drive.spreadsheets()
 
+        #get the column name order
+        first_row = sheet.values().get(spreadsheetId=SPREADSHEETID, range="Sheet1!A1:AA1", majorDimension="ROWS").execute()
+        sheet_row = first_row.get('values',[])[0]
+        
+
         rec_data = request.form
         table = json.loads(rec_data["table"])
 
@@ -389,28 +398,44 @@ def post_json():
         df["Citation"] = "get_citation(doi)"
 
         df["ConceptB"] = ""
-        df["ThemeB"] = ""
+        df["ThemeB"] = df["CONCEPT CATEGORY"] #?
+        df = df.drop(["CONCEPT CATEGORY"], axis=1)
 
+        sheet_row_upper = [str(x).upper() for x in sheet_row]
+        list_col_upper = df.columns.str.upper().tolist()
+        list_col =  df.columns.tolist()
+
+        append_list = [x for x in list_col if str(x).upper() not in sheet_row_upper]
+        append_list_upper = [str(x).upper() for x in append_list]
+
+        #add spreadsheet columns to dataframe if not already there 
+        for col_n in sheet_row:
+            if col_n.upper() not in list_col_upper:
+                df[col_n] = " "
         
-        df["EffectSize"] = ""
-        df["EffectSizeType"] = "-"
+        #make all columns uppercase
+        df.columns = df.columns.str.upper()
 
-        #checking if R D P columns are present in the table
-        for col in ["D", "R", "P"]:
-            if col in df.columns.tolist():
-                df["EffectSize"] = df[col]
-                df["EffectSizeType"] = col
-                break
-                
-        list_col = df.columns.tolist()
-        col_order = ["ThemeA","ConceptA", "ConceptADirection", "ConceptB", "ThemeB", "EffectType", 
-                     "DOI","Citation", "TableID", "K","N", "EffectSize", "EffectSizeType"]
-        list_ordered = col_order + [x for x in list_col if x not in col_order]
+        #order the columns
+        list_ordered = sheet_row_upper + append_list_upper
         df = df[list_ordered]
+        
+        #drop column names
+        df = df.rename(columns=df.iloc[0,0:])
+        df.drop(index=df.index[0], axis=0, inplace=True)
+
+        new_sheet_row = sheet_row + append_list
+
+        #extend the new column values
+        body = dict(majorDimension='ROWS', values = [new_sheet_row])
+        response1 = sheet.values().update(
+            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1:AA1",
+            body=body).execute()
+
 
         body = dict(majorDimension='ROWS', values = df.T.reset_index().T.values.tolist())
         response = sheet.values().append(
-            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1",
+            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A2",
             body=body).execute()
         
         logger.info("Table %s from DOI: %s is added to the spreadsheet by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
