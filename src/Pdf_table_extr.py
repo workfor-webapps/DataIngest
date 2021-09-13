@@ -81,6 +81,13 @@ def get_doi(pdf_file):
     
     return m
 
+def get_citation(doi):
+
+    data = PubData(doi)
+
+    citation = data.authors + ";" + data.title + "." + data.jur + "(" + str(data.pub_year) + ")."
+    return citation
+
 
 #---------------------------------------------------------------------------------------
 def get_pubData(doi):
@@ -143,6 +150,11 @@ class PubData:
                 Author_str += ", "
             self.authors = Author_str
             self.jur = self.data['short-container-title'][0]
+            try:
+                self.pub_year = self.data["published-online"]["date-parts"][0][0]
+            except:
+                self.pub_year = "year not found"
+
 
         
 #---------------------------------------------------------------------------------------
@@ -161,7 +173,7 @@ def extract_tables(fh):
     file_p = fh# path_files
     #initialize table-clean
     table_clean = []
-    table_pages = [[]]
+    table_pages = []
 
     #******************** Looping over pages for each PDF file ********
     for pg in range(0,pages):
@@ -353,7 +365,7 @@ def extract_tables(fh):
         df = df.replace('nan','')
         
         
-        df.insert(0,"CONCEPT CATEGORY", pd.Series(["concept"], index =[0]))
+        df.insert(0,"Concept Theme", pd.Series(["concept"], index =[0]))
         
         df.columns.str.upper()
         #adding the column names to rows

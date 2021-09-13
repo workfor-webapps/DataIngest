@@ -38,12 +38,13 @@
 
                        </div>
                        <div class="col">
-                           <select class="control-label" id="ref_con" >
-                               <option selected>Leadership </option>
+                           <input list="ref_con_list" id="ref_con" >
+                           <datalist id="ref_con_list">
                                <option value="1">training</option>
                                <option value="2">effectiveness</option>
                                <option value="3">Other</option>
-                           </select>
+
+                            </datalist>
                        </div>
                        
 
@@ -55,12 +56,13 @@
 
                        </div>
                        <div class="col">
-                           <select class="control-label" id="con_cat" aria-label=" ">
+                            <input list="con_cat_list" id="con_cat">
+                            <datalist id="con_cat_list">
                                <option selected>Leadership </option>
                                <option value="1">One</option>
                                <option value="2">Two</option>
                                <option value="3">Three</option>
-                           </select>
+                            </datalist>
                        </div>
                    </div>
                    <div class="row form-group">
@@ -126,8 +128,15 @@
                 <div class="row">
                     <div class="col-9">
                         <form class="form-inline" >
-                            <label for="concept" class="mr-sm-2">Concept Category :</label>
-                            <input type="concept" class="form-control mb-2 mr-sm-2" placeholder="concept" id="concept">
+                            <label for="concept" class="mr-sm-2">Concept Theme :</label>
+                            <input type="concept" class="form-control mb-2 mr-sm-2" id="concept">
+                            <datalist id="concept">
+                                <option selected>Leadership </option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
+                             </datalist>
+
                             <div class="form-check mb-2 mr-sm-2"></div>
                             <a class="btn btn-info btn-sm" onclick="applyAll()">Apply to all</a>
                             <div class="form-check mb-2 mr-sm-2"></div>

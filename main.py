@@ -284,14 +284,14 @@ def extract():
                 files_log["status"] = "Ready"
 
                 logger.info('%s tables are extracted from DOI: %s' %(len(tables), doi))
-
+                print(pages)
                 # get and save pages
                 pages_url = []
                 for page in pages:
                     pdf_file = PyPDF2.PdfFileReader(fh)
                     pdf_page = pdf_file.getPage(page[0]-1)
                     
-                    if page[0]: # if rotated page
+                    if page[1]: # if rotated page
                          pdf_page.rotateClockwise(90)
 
                     pdf_writer = PyPDF2.PdfFileWriter()
@@ -394,12 +394,16 @@ def post_json():
         df["ConceptADirection"] = rec_data["Con_Dir"]
         df["EffectType"] = rec_data["Eff_Type"]
         df["DOI"] = rec_data["DOI"]
-        df["TableID"] = rec_data["Table_num"]
-        df["Citation"] = "get_citation(doi)"
+        df["TableID"] = str(int(rec_data["Table_num"]) + 1)
+        df["Citation"] = get_citation(rec_data["DOI"])
+        if "META-ANALYSIS" in df.columns:
+            df["ConceptB"] = df["META-ANALYSIS"]
+            df = df.drop(["META-ANALYSIS"], axis=1)
+        else:
+            df["ConceptB"] = " "
 
-        df["ConceptB"] = ""
-        df["ThemeB"] = df["CONCEPT CATEGORY"] #?
-        df = df.drop(["CONCEPT CATEGORY"], axis=1)
+        df["ThemeB"] = df["CONCEPT THEME"] #?
+        df = df.drop(["CONCEPT THEME"], axis=1)
 
         sheet_row_upper = [str(x).upper() for x in sheet_row]
         list_col_upper = df.columns.str.upper().tolist()
@@ -444,4 +448,4 @@ def post_json():
 
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=True,host='127.0.0.1', port=8080)
