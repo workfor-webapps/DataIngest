@@ -40,9 +40,14 @@
                        <div class="col">
                            <input list="ref_con_list" id="ref_con" >
                            <datalist id="ref_con_list">
-                               <option value="1">training</option>
-                               <option value="2">effectiveness</option>
-                               <option value="3">Other</option>
+                               <option value="1">Leadership</option>
+                               <option value="2">Engagement</option>
+                               <option value="3">Learning</option>
+                               <option value="4">Something</option>
+                               <option value="5">Nothing</option>
+                               <option value="5">Individual</option>
+
+
 
                             </datalist>
                        </div>
@@ -58,10 +63,10 @@
                        <div class="col">
                             <input list="con_cat_list" id="con_cat">
                             <datalist id="con_cat_list">
-                               <option selected>Leadership </option>
-                               <option value="1">One</option>
-                               <option value="2">Two</option>
-                               <option value="3">Three</option>
+                               <option selected>Transfer</option>
+                               <option value="1">Commitment</option>
+                               <option value="2">Behaviour</option>
+
                             </datalist>
                        </div>
                    </div>
@@ -73,9 +78,8 @@
                        <div class="col">
                            <select class="control-label" id="con_dir" aria-label=" ">
                                <option selected>Outcome</option>
-                               <option value="1">One</option>
-                               <option value="2">Two</option>
-                               <option value="3">Three</option>
+                               <option value="1">Driver</option>
+
                            </select>
                        </div>
                    </div>
@@ -87,9 +91,8 @@
                        <div class="col">
                            <select class="control-label" id="eff_type" aria-label=" ">
                                <option selected>Correlation</option>
-                               <option value="1">One</option>
-                               <option value="2">Two</option>
-                               <option value="3">Three</option>
+                               <option value="1">Reression</option>
+
                            </select>
                        </div>
                    </div>
@@ -100,29 +103,10 @@
         </div>
         <div class="row">
             <div class="col-5 "> <!-- This div is for image and magnifier-->
-                <!-- <style>
-                    * {box-sizing: border-box;}
-                    
-                    .img-magnifier-container {
-                      position:relative;
-                    }
-                    
-                    .img-magnifier-glass {
-                      position: absolute;
-                      border: 3px solid #000;
-                      border-radius: 50%;
-                      cursor: auto;
-                      /*Set the size of the magnifier glass:*/
-                      width: 100px;
-                      height: 100px;
-                    }
-                </style> -->
-                <!-- <img id = "pageImage" class="img-fluid shadow-lg p-3 mb-5 bg-white" src='../static/capture.png'> -->
-                
-                    <iframe style="position: sticky; position: -webkit-sticky; top: 0;"  width="750" height="900" src={{tables}}> </iframe> 
+           
+                    <iframe style="position: sticky; position: -webkit-sticky; top: 0;"  width=100% height=150% src={{tables}}> </iframe> 
                 
             </div>
-
 
             <div class="col-6">
                 <div class="row">
@@ -191,8 +175,6 @@ function add_bott() {
         rowAddNewAndEdit('pdf');
   };
 
-
 </script>
-
 
 {% endblock %}
