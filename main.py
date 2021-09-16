@@ -56,6 +56,7 @@ class User:
 #add admin user
 users = []
 users.append(User(id=1, username='admin', password='admin'))
+users.append(User(id=2, username='user1', password='user1'))
 
 
 app = Flask(__name__)
@@ -231,7 +232,7 @@ def extract():
     data_file = []
 
     if not file_items:
-        return 'No new file', 200
+        return redirect(url_for('list'))
 
 
 
@@ -264,14 +265,14 @@ def extract():
             move_file(service=drive, file_id=file_id,folder_id=folder_id)
             files_log["status"] = "Failed"
         else:
-            #state = store_doi(doi)
-            state = "New"
+            state = store_doi(doi)
+            #state = "New"
             logger.info('Extracting DOI: %s' %doi)
 
             if state == "Old":
                 logger.info('DOI: %s is already in database' %doi)
                 file_id = file["id"]
-                folder_id = get_folder_id(drive, "Archive")
+                folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file_id,folder_id=folder_id)
                 files_data["status"] = "Duplicate"
                 files_log["status"] = "Duplicated"
@@ -332,7 +333,7 @@ def extract():
     save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
     fh.flush()  
 
-    return 'Sucesss', 200
+    return redirect(url_for('list'))
 
 #------------------------------------------------------------------------------------------------
 @app.route('/status_update')
@@ -448,4 +449,5 @@ def post_json():
 
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True,host='127.0.0.1', port=8080)
+    #app.run(debug=True,host='0.0.0.0', port=8080)
+    app.run(debug=True,host='localhost', port=8080)

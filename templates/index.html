@@ -2,6 +2,8 @@
 
 {% block head %}
 
+
+
 {% endblock %}
 
 {% block body %}
@@ -16,6 +18,8 @@
     </ul>
   {% endif %}
 {% endwith %}
+
+
 
     <div class="container">
         <div>
@@ -37,7 +41,7 @@
 
                 </div>
                 <div class="col-1">
-                    <a style="text-align: right;" class="btn btn-link btn-sm my-2 my-sm-0" href="/status_update">refresh</a>
+                    <a style="text-align: right;" class="btn btn-link btn-sm my-2 my-sm-0" href="/extract">refresh</a>
                 </div>
             </div>
             <br>
@@ -77,5 +81,32 @@
 
         </div>
     </div>
+
+    <div class="loader-wrapper" id="loading" >
+    
+        <span class="loader"><span class="loader-inner"></span></span>
+
+    <h3>
+        <div style="text-align: center; color: greenyellow;">
+            Extracting data
+            <br>  
+        </div>
+    </h3>
+    
+    <div>
+        <span class="loader"><span class="loader-inner"></span></span>
+    </div>
+    
+    
+</div>
+
+<script>
+    document.onreadystatechange = function () {
+        if (document.readyState === 'complete') {
+      document.getElementById("loading").style.display = "none"
+    }
+    };
+</script>
+
 
 {% endblock %}

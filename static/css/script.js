@@ -22,8 +22,8 @@ function html2json() {
   });
 
   document.getElementById("concept_form").submit()
-  var ref_con =  $("#ref_con option:selected").text();
-  var con_cat =  $("#con_cat option:selected").text();
+  var ref_con =  $("#ref_con").val();
+  var con_cat =  $("#con_cat").val();
   var con_dir =  $("#con_dir option:selected").text();
   var eff_type =  $("#eff_type option:selected").text();
   var pub_doi = document.getElementById("pub_data").getAttribute('value');

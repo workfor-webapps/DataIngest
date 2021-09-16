@@ -1,5 +1,11 @@
-runtime: costom
+runtime: custom
 env: flex
-entrypoint: gunicorn -b :$PORT main:app
+##entrypoint: gunicorn -b :$PORT main:app
+
+handlers:
+- url: /.*
+  script: auto
+  secure: always
+  redirect_http_response_code: 301
 
 
