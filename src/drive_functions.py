@@ -11,7 +11,8 @@ from googleapiclient.http import MediaIoBaseUpload
 
 #-----------------------------------------------------------------------------------------
 def store_cred(credentials):
-    """This function is for saving credentials to a persistent datastore
+
+    """This function is for saving credentials to a persistent datastore- no return value
 
     :param credentials: google drive credentials
     :type credentials: dictionary
@@ -33,6 +34,7 @@ def store_cred(credentials):
 
 #-----------------------------------------------------------------------------------------
 def get_cred():
+
     """This function is for retrieving exicting credentials from the datastore
 
     :return: credentials
@@ -164,13 +166,11 @@ def get_folder_id(service, name):
     :rtype: str
     """
     
-    # First, get the folder ID by querying by mimeType and name
     folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains " + "'" + name + "'",
      pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    # this gives us a list of all folders with that name
     folderIdResult = folderId.get('files', [])
     if not folderIdResult: return 0
-    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
+    #we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
     id = folderIdResult[0].get('id')
     return id
 
@@ -187,11 +187,8 @@ def get_files(service, folder_id):
     """
     
     id = folder_id
-
     if id == 0: return 0
 
-    # Now, using the folder ID gotten above, we get all the files from
-    # that particular folder
     results = service.files().list(
         q = "'" + id + "' in parents", 
         orderBy = "createdTime desc", 
@@ -200,6 +197,7 @@ def get_files(service, folder_id):
         ).execute()
 
     items = results.get('files', [])
+
     return items
 
 #-----------------------------------------------------------------------------------------
@@ -226,19 +224,15 @@ def move_file(service, file_id, folder_id):
 
 #-----------------------------------------------------------------------------------------
 def empty_Images_folder(service):
-    """This function removes all the files in Images folder.
+    """This function removes all the files in Images folder. No return value
 
     :param service: google drive service object
     :type service: service
     """
-    # First, get the folder ID by querying by mimeType and name
     folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'PDF_PageImage'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    # this gives us a list of all folders with that name
     folderIdResult = folderId.get('files', [])
-    # however, we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
     id = folderIdResult[0].get('id')
     results = service.files().list(q = "'" + id + "' in parents", orderBy = "createdTime desc", pageSize=10, fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime, webContentLink, webViewLink )").execute()
-
     items = results.get('files', [])
 
     for item in items:

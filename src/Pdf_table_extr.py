@@ -24,7 +24,7 @@ def excel_init():
     if os.path.isfile("./Processed.xlsx"): 
         ans = str(input("Warning: Processed.xlsx file in the working directory will be overwritten, would you like to continue? y/n :")).upper()
         
-        #if file exist ask if you wnat to overwrite it
+        #if file exist ask if you want to overwrite it
         if ans == "N" or ans == "NO":
             print("Terminating the program...")
             sys.exit() 
@@ -33,8 +33,7 @@ def excel_init():
     writer = pd.ExcelWriter('./Processed.xlsx', engine='xlsxwriter')
     return(writer)
 
-
-
+#---------------------------------------------------------------------------------------
 def get_title_from_pdf(pdf_file):
     
     """This function uses PyPDF2 library to extract the paper title. This function is 
@@ -67,11 +66,8 @@ def get_doi(pdf_file):
     """
 
     pages = [0,1] # just the first and second pages
-    #get the text
     text = high_level.extract_text(pdf_file, "", pages)
-    # regular expression
     doi_re = re.compile("/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\>\"\<)])+")
-    #search re in the text
     m = doi_re.search(text)
 
     if m is None:
@@ -83,8 +79,15 @@ def get_doi(pdf_file):
 
 def get_citation(doi):
 
-    data = PubData(doi)
+    """Generate citation data from doi
 
+    :param doi: DOI
+    :type doi: str
+    :return: formated citation
+    :rtype: str
+    """
+
+    data = PubData(doi)
     citation = data.authors + ";" + data.title + "." + data.jur + "(" + str(data.pub_year) + ")."
     return citation
 
