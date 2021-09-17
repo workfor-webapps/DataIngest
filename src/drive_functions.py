@@ -25,11 +25,11 @@ def store_cred(credentials):
         key = datastore_client.key(kind, id)
         entity = datastore_client.get(key=key)
         entity["token"] = credentials["token"]
-        entity["refresh_token"] = credentials["refresh_token"]
-        entity["token_uri"] = credentials["token_uri"]
-        entity["client_id"] = credentials["client_id"]
-        entity["client_secret"] = credentials["client_secret"]
-        entity["scopes"] = credentials["scopes"]
+        #entity["refresh_token"] = credentials["refresh_token"]
+        #entity["token_uri"] = credentials["token_uri"]
+        #entity["client_id"] = credentials["client_id"]
+        #entity["client_secret"] = credentials["client_secret"]
+        #entity["scopes"] = credentials["scopes"]
         datastore_client.put(entity)
 
 #-----------------------------------------------------------------------------------------
@@ -107,8 +107,8 @@ def get_service(API_SERVICE_NAME, API_VERSION):
     credential = get_cred()
     session['credentials'] = credential
 
-    if 'credentials' not in session:
-        return redirect('authorize')
+    #if 'credentials' not in session:
+    #    return redirect('authorize')
 
     # Load credentials from the session.
     credentials = google.oauth2.credentials.Credentials(

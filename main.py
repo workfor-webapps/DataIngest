@@ -32,7 +32,7 @@ API_SERVICE_DRIVE = 'drive'
 API_SERVICE_SHEET = 'sheets'
 API_DRIVE_VERSION = 'v3'
 API_SHEET_VERSION = 'v4'
-SPREADSHEETID = "1PyzArReUyKQAnYbBWkMDzUjNSw194HmckzCkmjt9_3A"
+SPREADSHEETID = "1q_BZgXVhyKC2Cb-zyz7blt-MLcbYQEH90KtsA5Op_84"
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 class User:
@@ -96,11 +96,11 @@ def index():
     if not g.user:
         return redirect(url_for('login'))
     
-    if 'credentials' not in session:
-        return redirect('authorize')
+    #if 'credentials' not in session:
+    #    return redirect('authorize')
 
-    else:
-        return redirect(url_for('list'))  
+    #else:
+    return redirect(url_for('list'))  
 
 #------------------------------------------------------------------------------------------------
 @app.route('/authorize')
@@ -110,7 +110,6 @@ def authorize():
     flow.redirect_uri = url_for('oauth2callback', _external=True)
     authorization_url, state = flow.authorization_url(
         access_type='offline',
-        approval_prompt='force',
         include_granted_scopes='true')
 
     # Store the state so the callback can verify the auth server response.
@@ -237,11 +236,11 @@ def extract():
 
 
     for file in file_items:
-        files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
+        
         files_log = dict.fromkeys(['name', 'doi', 'status'])
         
-        files_data["PDF_url"] = file["webViewLink"]
-        files_data["name"] = file["name"]
+        
+
         files_log["name"] = file["name"]     
 
         request = drive.files().get_media(fileId=file["id"])
@@ -255,7 +254,8 @@ def extract():
 
         fh.seek(0)
         doi = get_doi(fh)
-        files_data["doi"] = doi
+
+        
         files_log["doi"] = doi
 
         if doi == "DOI not found!": # move to "nodoi" folder"
@@ -274,10 +274,15 @@ def extract():
                 file_id = file["id"]
                 folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file_id,folder_id=folder_id)
-                files_data["status"] = "Duplicate"
+                #files_data["status"] = "Duplicate"
                 files_log["status"] = "Duplicated"
             else:
                 # here extract and save table data
+                files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
+                files_data["PDF_url"] = file["webViewLink"]
+                files_data["name"] = file["name"]
+                files_data["doi"] = doi
+
                 tables, pages = extract_tables(fh)
                 files_data["tables"] = tables
                 files_data["pages"] = pages
@@ -309,6 +314,7 @@ def extract():
                     pages_url.append(P_url)
                 
                 files_data["pages_urls"] = pages_url
+                data_file.append(files_data)
 
                 folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file["id"],folder_id=folder_id)
@@ -316,7 +322,8 @@ def extract():
 
         #saveing log and table dat for all files in a batch
         log_file.append(files_log)
-        data_file.append(files_data)
+        
+            
 
     # convert logs into JSON:
     data = json.dumps(log_file)
@@ -397,7 +404,10 @@ def post_json():
         df["DOI"] = rec_data["DOI"]
         df["TableID"] = str(int(rec_data["Table_num"]) + 1)
         df["Citation"] = get_citation(rec_data["DOI"])
-        if "META-ANALYSIS" in df.columns:
+        
+        if "CONCEPTB" in df.columns:
+            pass
+        elif "META-ANALYSIS" in df.columns:
             df["ConceptB"] = df["META-ANALYSIS"]
             df = df.drop(["META-ANALYSIS"], axis=1)
         else:
@@ -434,7 +444,7 @@ def post_json():
         #extend the new column values
         body = dict(majorDimension='ROWS', values = [new_sheet_row])
         response1 = sheet.values().update(
-            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1:AA1",
+            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1:BA1",
             body=body).execute()
 
 
@@ -445,7 +455,7 @@ def post_json():
         
         logger.info("Table %s from DOI: %s is added to the spreadsheet by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
 
-        return 200
+        return "success", 200
 
 @app.route('/ignore_json', methods = ['POST'])
 def ignore_json():
@@ -454,7 +464,7 @@ def ignore_json():
         rec_data = request.form
         logger.info("Table %s from DOI: %s is ignored by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
 
-    return 200
+    return "success", 200
 
 
 #------------------------------------------------------------------------------------------------

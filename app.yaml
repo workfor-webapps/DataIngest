@@ -9,7 +9,6 @@ handlers:
   redirect_http_response_code: 301
 
 automatic_scaling:
-  cool_down_period: 120s
   min_num_instances: 2
   max_num_instances: 3
   cpu_utilization:
