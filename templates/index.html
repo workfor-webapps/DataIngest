@@ -41,7 +41,7 @@
 
                 </div>
                 <div class="col-1">
-                    <a style="text-align: right;" class="btn btn-link btn-sm my-2 my-sm-0" href="/extract">refresh</a>
+                    <a style="text-align: right;" class="btn btn-link btn-sm my-2 my-sm-0" onclick="loader()" href="/extract">refresh</a>
                 </div>
             </div>
             <br>
@@ -82,12 +82,21 @@
         </div>
     </div>
 
-    <div class="loader-wrapper" id="loading" >
-    
+    <div class="loader-wrapper" id="loading" style="display: none; text-align: center; margin: auto;">
+    <br>
+    <div>
+        <h3> .</h3>
+        <h3> .</h3>
+        <h3> .</h3>
+        <h3> .</h3>
+        <h3> .</h3>
+    </div>
+
+
         <span class="loader"><span class="loader-inner"></span></span>
 
     <h3>
-        <div style="text-align: center; color: greenyellow;">
+        <div style="text-align: center; color: greenyellow; margin: auto;">
             Extracting data
             <br>  
         </div>
@@ -101,10 +110,9 @@
 </div>
 
 <script>
-    document.onreadystatechange = function () {
-        if (document.readyState === 'complete') {
-      document.getElementById("loading").style.display = "none"
-    }
+     function loader() {
+        
+      document.getElementById("loading").style.display = "initial"
     };
 </script>
 
