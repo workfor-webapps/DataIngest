@@ -102,8 +102,8 @@ def get_service(API_SERVICE_NAME, API_VERSION):
     :rtype: google service
     """
 
-    #credential = get_cred()
-    #session['credentials'] = credential
+    credential = get_cred()
+    session['credentials'] = credential
 
     if 'credentials' not in session:
         return redirect('authorize')
@@ -113,7 +113,7 @@ def get_service(API_SERVICE_NAME, API_VERSION):
         **session['credentials'])
     
     Dict_cred = credentials_to_dict(credentials)
-    #store_cred (Dict_cred)
+    store_cred (Dict_cred)
     session['credentials'] = Dict_cred
 
     service = googleapiclient.discovery.build(

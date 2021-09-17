@@ -52,6 +52,31 @@ function html2json() {
 };
 
 //------------------------------------------------------------------------------------------------
+function ignore_table() {
+  
+  var pub_doi = document.getElementById("pub_data").getAttribute('value');
+  var table_num = document.getElementById("table_number").getAttribute('value');
+  
+  //construct an HTTP request
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/ignore_json', true);
+  //xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+  //xhr.send(JSON.stringify(rows));
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+  var send_data ="&DOI=" + pub_doi + "&Table_num=" + table_num;
+  
+  // send the collected data as JSON
+  xhr.send(send_data);
+
+  // reload page
+  var maxt = $('#my-data').data('value');
+  var url = window.location.href;    
+  var url2 = replaceUrlParam (url, 'table_num', maxt); 
+  window.location.href = url2;
+
+  return 200;
+};
+//------------------------------------------------------------------------------------------------
 function replaceUrlParam(url, paramName, max_t)
 {
     var value = GetURLParameter(paramName);
@@ -151,17 +176,6 @@ function magnify(imgID, zoom) {
     y = y - window.pageYOffset;
     return {x : x, y : y};
   }
-};
-
-function Ignore() {
-   // reload page
-   var maxt = $('#my-data').data('value')
-   var url = window.location.href;    
-   var url2 = replaceUrlParam (url, 'table_num', maxt);
-   
-   window.location.href = url2;
-  console.log("Table Deleted")
-  return 200;
 };
 
 //------------------------------------------------------------------------------------------------

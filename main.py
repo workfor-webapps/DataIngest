@@ -16,12 +16,12 @@ from googleapiclient.http import MediaIoBaseDownload
 import google.cloud.logging
 
 # Instantiates a client
-#client = google.cloud.logging.Client()
-#handler = client.get_default_handler()
-handler = logging.StreamHandler()
+client = google.cloud.logging.Client()
+handler = client.get_default_handler()
+#handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-#client.setup_logging()
+client.setup_logging()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
@@ -132,7 +132,7 @@ def oauth2callback():
     credentials = flow.credentials
 
     dict = credentials_to_dict(credentials)
-    #store_cred(dict)
+    store_cred(dict)
     session['credentials'] = dict
     
     logger.info('UserID %s has been authorized access to API' %(session['user_id']) )
@@ -445,7 +445,17 @@ def post_json():
         
         logger.info("Table %s from DOI: %s is added to the spreadsheet by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
 
-        return 'Sucesss', 200
+        return 200
+
+@app.route('/ignore_json', methods = ['POST'])
+def ignore_json():
+    if request.method == 'POST':
+
+        rec_data = request.form
+        logger.info("Table %s from DOI: %s is ignored by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
+
+    return 200
+
 
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
