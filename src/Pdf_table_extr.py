@@ -68,14 +68,20 @@ def get_doi(pdf_file):
     pages = [0,1] # just the first and second pages
     text = high_level.extract_text(pdf_file, "", pages)
     doi_re = re.compile("/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\>\"\<)])+")
-    m = doi_re.search(text)
+    m = doi_re.findall(text)
 
-    if m is None:
-        m="DOI not found!"
+    if m ==[]:
+        doi="DOI not found!"
     else:
-        m = m.group(0)
-    
-    return m
+        doi = "DOI not found!"
+        for item in m:
+        #check if doi is valide
+            data = PubData(item)
+            if data.status:
+                doi = item
+                break
+                
+    return doi
 
 def get_citation(doi):
 
