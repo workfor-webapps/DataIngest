@@ -40,12 +40,14 @@
                        <div class="col">
                            <input list="ref_con_list" id="ref_con" >
                            <datalist id="ref_con_list">
-                               <option value="Leadership">
-                               <option value="Engagement">
+                            {% for th_val in theme_val %} 
+                               <option value= {{th_val}}>
+                            {% endfor %}
+                               <!-- <option value="Engagement">
                                <option value="Learning">
                                <option value="Something">
                                <option value="Nothing">
-                               <option value="Individual">
+                               <option value="Individual"> -->
 
                             </datalist>
                        </div>
