@@ -68,19 +68,19 @@ def get_doi(pdf_file):
     pages = [0,1] # just the first and second pages
     text = high_level.extract_text(pdf_file, "", pages)
     doi_re = re.compile("/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\>\"\<)])+")
-    m = doi_re.findall(text)
-
-    if m ==[]:
+    m = doi_re.search(text)
+   
+    if m is None:
         doi="DOI not found!"
     else:
-        doi = "DOI not found!"
-        for item in m:
+        m = m.group(0)
         #check if doi is valide
-            data = PubData(item)
-            if data.status:
-                doi = item
-                break
-                
+        data = PubData(m)
+        if data.status:
+            doi = m
+        else:
+            doi="DOI not found!"
+ 
     return doi
 
 def get_citation(doi):
@@ -145,7 +145,7 @@ class PubData:
         self.doi = doi
         try:
             self.data = crossref_commons.retrieval.get_publication_as_json(doi)
-        except ValueError: #DOI could not be resulved
+        except: #DOI could not be resulved
             print("DOI does not exist in crossref database")
             self.status = False
         
@@ -464,6 +464,7 @@ def write_to_excel(writer, jj, paper_title, table_clean):
     writer.save()
     return 0
 
+#---------------------------------------------------------------------------------------
 def uniquify(df_columns):
     seen = set()
 

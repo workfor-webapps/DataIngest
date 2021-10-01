@@ -104,11 +104,11 @@ def get_service(API_SERVICE_NAME, API_VERSION):
     :rtype: google service
     """
 
-    #credential = get_cred()
-    #session['credentials'] = credential
+    # credential = get_cred()
+    # session['credentials'] = credential
 
-    #if 'credentials' not in session:
-    #    return redirect('authorize')
+    # if 'credentials' not in session:
+    #     return redirect('authorize')
 
     # Load credentials from the session.
     credentials = google.oauth2.credentials.Credentials(
