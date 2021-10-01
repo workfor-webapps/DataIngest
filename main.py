@@ -219,12 +219,15 @@ def PullTable():
     sheet = drive.spreadsheets()
 
     #get the column name order
-    theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!A1:A20", majorDimension="COLUMNS ").execute()
+    theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!A2:A20", majorDimension="COLUMNS").execute()
     theme_values = theme_column.get('values',[])[0]
+
+    con_theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!B2:B20", majorDimension="COLUMNS").execute()
+    con_theme_values = con_theme_column.get('values',[])[0]
      
     return render_template('indexT.html',table_num = table_num, tables = page, 
                             table_html= rendered_table , pub_data = pub_data, 
-                            max_tables = max_tables, pdf_url = PDFurl, theme_val = theme_values)
+                            max_tables = max_tables, pdf_url = PDFurl, theme_val = theme_values, con_theme_val = con_theme_values)
 
 #------------------------------------------------------------------------------------------------
 @app.route('/extract')
@@ -453,11 +456,11 @@ def post_json():
         #extend the new column values
         body = dict(majorDimension='ROWS', values = [new_sheet_row])
         response1 = sheet.values().update(
-            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1:AK1",
+            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AK1",
             body=body).execute()
 
 
-        body = dict(majorDimension='ROWS', values = df.T.reset_index().T.values.tolist())
+        body = dict(majorDimension='ROWS', values = df.values.tolist())
         response = sheet.values().append(
             valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A2",
             body=body).execute()

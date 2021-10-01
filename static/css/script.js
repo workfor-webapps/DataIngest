@@ -3,7 +3,8 @@ function html2json() {
   var $table = $("table")
   rows = [],
   header = [];
-
+  conceptb_check = 0;
+  conceptt_check = 0;
   $table.find("thead th").each(function () {
       header.push($(this).html());
   });
@@ -14,12 +15,42 @@ function html2json() {
       $(this).find("td").each(function (i) {
           var key = header[i],
               value = $(this).html();
+              if (value) {
+
+                if (typeof value === 'string' || value instanceof String) {
+                  if (value.toUpperCase() == "CONCEPTB" || value.toUpperCase == "META-ANALYSIS") {
+                    conceptb_check = 1;
+                  };
+                  if (value.toUpperCase() == "CONCEPT THEME") {
+                    conceptt_check = 1;
+                  };
+
+                };
+
+
+              } else {
+                value = ""
+              };
 
           row[key] = value;
       });
     
       rows.push(row);
   });
+
+  if (conceptb_check == 0) {
+    var r = window.confirm("Missing 'ConceptB' column in the table. Do you want to continue?");
+    if (r== false){
+      return 0;
+    };
+  };
+
+  if (conceptt_check == 0) {
+    var r = window.confirm("Missing 'Concept Theme' column. This table may not be added to the list.");
+    if (r== false){
+      return 0;
+    };
+  };
 
   document.getElementById("concept_form").submit()
   var ref_con =  $("#ref_con").val();
@@ -33,9 +64,9 @@ function html2json() {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/post_json', false);
   //xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-  //xhr.send(JSON.stringify(rows));
+
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-  var send_data ="table=" + JSON.stringify(rows) + "&Ref_Con="+ ref_con +
+  var send_data ="table=" + JSON.stringify(rows,null,"") + "&Ref_Con="+ ref_con +
                   "&Con_Cat=" + con_cat + "&Con_Dir=" + con_dir + "&Eff_Type=" + eff_type +
                   "&DOI=" + pub_doi + "&Table_num=" + table_num;
   
@@ -60,8 +91,6 @@ function ignore_table() {
   //construct an HTTP request
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/ignore_json', true);
-  //xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-  //xhr.send(JSON.stringify(rows));
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
   var send_data ="&DOI=" + pub_doi + "&Table_num=" + table_num;
   

@@ -374,7 +374,7 @@ def extract_tables(fh):
         df = df.replace('nan','')
         
         
-        df.insert(0,"Concept Theme", pd.Series(["concept"], index =[0]))
+        df.insert(0,"Concept Theme", pd.Series(["Concept theme"], index =[0]))
         
         df.columns.str.upper()
         #adding the column names to rows

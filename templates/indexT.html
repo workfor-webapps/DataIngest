@@ -63,9 +63,13 @@
                        <div class="col">
                             <input list="con_cat_list" id="con_cat">
                             <datalist id="con_cat_list">
-                               <option value="Transfer">
+                            {% for c_th_val in con_theme_val %} 
+                                <option value= {{c_th_val}}>
+                            {% endfor %}
+
+                               <!-- <option value="Transfer">
                                <option value="Commitment">
-                               <option value="Behaviour">
+                               <option value="Behaviour"> -->
 
                             </datalist>
                        </div>
@@ -113,14 +117,13 @@
                     <div class="col-9">
                         <form class="form-inline" >
                             <label for="concept" class="mr-sm-2">Concept Theme :</label>
-                            <input type="concept" class="form-control mb-2 mr-sm-2" id="concept">
-                            <datalist id="concept">
-                                <option value="Leadership">Leadership</option>
-                                <option value="Engagement">Engagement</option>
-                                <option value="Learning">Learning</option>
-                                <option value="Something">Something</option>
-                                <option value="Nothing">Nothing</option>
-                                <option value="Individual">Individual</option>
+                            <input list="concept_list" class="form-control mb-2 mr-sm-2" id="concept">
+                            <datalist id="concept_list">
+                            
+                                {% for c_th_val in con_theme_val %} 
+                                    <option value= {{c_th_val}}>
+                                {% endfor %}
+
                              </datalist>
 
                             <div class="form-check mb-2 mr-sm-2"></div>

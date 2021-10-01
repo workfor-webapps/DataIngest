@@ -132,7 +132,7 @@ def oauth2callback():
     credentials = flow.credentials
 
     dict = credentials_to_dict(credentials)
-    store_cred(dict)
+    #store_cred(dict)
     session['credentials'] = dict
     
     logger.info('UserID %s has been authorized access to API' %(session['user_id']) )
@@ -219,12 +219,15 @@ def PullTable():
     sheet = drive.spreadsheets()
 
     #get the column name order
-    theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!A1:A20", majorDimension="COLUMNS ").execute()
+    theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!A2:A20", majorDimension="COLUMNS").execute()
     theme_values = theme_column.get('values',[])[0]
+
+    con_theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!B2:B20", majorDimension="COLUMNS").execute()
+    con_theme_values = con_theme_column.get('values',[])[0]
      
     return render_template('indexT.html',table_num = table_num, tables = page, 
                             table_html= rendered_table , pub_data = pub_data, 
-                            max_tables = max_tables, pdf_url = PDFurl, theme_val = theme_values)
+                            max_tables = max_tables, pdf_url = PDFurl, theme_val = theme_values, con_theme_val = con_theme_values)
 
 #------------------------------------------------------------------------------------------------
 @app.route('/extract')
@@ -451,16 +454,22 @@ def post_json():
         new_sheet_row = sheet_row + append_list
 
         #extend the new column values
-        body = dict(majorDimension='ROWS', values = [new_sheet_row])
+        body1 = dict(majorDimension='ROWS', values = [new_sheet_row])
         response1 = sheet.values().update(
-            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="Sheet1!A1:AK1",
-            body=body).execute()
+            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AK1",
+            body=body1).execute()
 
+        print("Response1 =", response1)
 
-        body = dict(majorDimension='ROWS', values = df.T.reset_index().T.values.tolist())
+        print(df.values.tolist())
+        
+        #df.T.reset_index().T.values.tolist()
+        body = dict(majorDimension='ROWS', values = df.values.tolist())
         response = sheet.values().append(
             valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A2",
             body=body).execute()
+
+        print("Response =", response)
         
         logger.info("Table %s from DOI: %s is added to the spreadsheet by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
 
