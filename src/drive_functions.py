@@ -104,18 +104,18 @@ def get_service(API_SERVICE_NAME, API_VERSION):
     :rtype: google service
     """
 
-    # credential = get_cred()
-    # session['credentials'] = credential
+    credential = get_cred()
+    session['credentials'] = credential
 
-    # if 'credentials' not in session:
-    #     return redirect('authorize')
+    if 'credentials' not in session:
+        return redirect('authorize')
 
     # Load credentials from the session.
     credentials = google.oauth2.credentials.Credentials(
         **session['credentials'])
     
     Dict_cred = credentials_to_dict(credentials)
-    #store_cred (Dict_cred)
+    store_cred (Dict_cred)
     session['credentials'] = Dict_cred
 
     service = googleapiclient.discovery.build(
@@ -200,6 +200,31 @@ def get_files(service, folder_id):
 
     return items
 
+def find_file(service, folder_id, file_name):
+    """This funtion finds a specific files in a google drive folder and returns their metadata.
+
+    :param service: google drive service object
+    :type service: service
+    :param folder_id: google drive folder ID (obtainable from ''get_folder_id(service, name)'' function)
+    :type folder_id: str
+    :return: list of files metadata in the google folder
+    :rtype: list
+    """
+    
+    id = folder_id
+    if id == 0: return 0
+
+    results = service.files().list(
+        q = "'" + id + "' in parents and name='"+file_name+"'", 
+        orderBy = "createdTime desc", 
+        pageSize=10, 
+        fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime, webContentLink, webViewLink )"
+        ).execute()
+
+    items = results.get('files', [])
+
+    return items
+
 #-----------------------------------------------------------------------------------------
 def move_file(service, file_id, folder_id):
     """This function moves the given file with the ''file_id'' to the folder with ''folder_id''.
@@ -222,18 +247,32 @@ def move_file(service, file_id, folder_id):
                                         removeParents=previous_parents,
                                         fields='id, parents').execute()
 
-#-----------------------------------------------------------------------------------------
-def empty_Images_folder(service):
-    """This function removes all the files in Images folder. No return value
+def remove_file(service, file_Id):
+    """This function removes a file with a file ID. No return value
 
     :param service: google drive service object
     :type service: service
+    :param file_Id: file ID
+    :type service: str
+    """
+    
+    service.files().delete(fileId=file_Id).execute()
+
+#-----------------------------------------------------------------------------------------
+def empty_Images_folder(service, doi):
+    """This function removes all the files for a doi in Images folder. No return value
+
+    :param service: google drive service object
+    :type service: service
+    :param doi: DOI
+    type doi: str
     """
     folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains 'PDF_PageImage'", pageSize=10, fields="nextPageToken, files(id, name)").execute()
     folderIdResult = folderId.get('files', [])
     id = folderIdResult[0].get('id')
-    results = service.files().list(q = "'" + id + "' in parents", orderBy = "createdTime desc", pageSize=10, fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime, webContentLink, webViewLink )").execute()
+    results = service.files().list(q = "'" + id + "' in parents and name contains '" + doi + "'", orderBy = "createdTime desc", pageSize=10, fields="nextPageToken, files(id, name, mimeType, size, parents, modifiedTime, webContentLink, webViewLink )").execute()
     items = results.get('files', [])
 
     for item in items:
         service.files().delete(fileId=item["id"]).execute()
+

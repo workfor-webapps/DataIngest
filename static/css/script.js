@@ -18,7 +18,7 @@ function html2json() {
               if (value) {
 
                 if (typeof value === 'string' || value instanceof String) {
-                  if (value.toUpperCase() == "CONCEPTB" || value.toUpperCase == "META-ANALYSIS") {
+                  if (value.toUpperCase() == "CONCEPTB" || value.toUpperCase() == "META-ANALYSIS") {
                     conceptb_check = 1;
                   };
                   if (value.toUpperCase() == "CONCEPT THEME") {
@@ -124,7 +124,7 @@ function replaceUrlParam(url, paramName, max_t)
       url = replaceUrlParam (url, 'paper', 100);
       var value = 0;
       //alert ("processing tables for next paper");
-      window.alert("Processing next paper (if any)");
+      window.alert("To process next paper (if any) click 'Review Extracted tables'");
     }
  
     var pattern = new RegExp('\\b('+paramName+'=).*?(&|#|$)');

@@ -1,5 +1,1 @@
 cron:
-- description: "hourly drive check"
-  url: /extract
-  schedule: every 60 mins
-

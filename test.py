@@ -148,7 +148,7 @@ def PullTable():
     footer = "\n{% endblock %}"
 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
-    file_items = get_files(drive, get_folder_id(drive, "Json"))  
+    file_items = get_files(drive, get_folder_id(drive, "Extracted_Tables"))  
 
     if not file_items:
         flash ('No table for extraction!')
@@ -176,7 +176,7 @@ def PullTable():
 
 
     if paper >= len(extracted_data) :
-        empty_Images_folder(drive)
+        empty_Images_folder(drive,  extracted_data[0]["doi"] )
         
         #saving new log file
         log_file = []
@@ -191,13 +191,20 @@ def PullTable():
         
         # convert logs into JSON:
         data_j = json.dumps(log_file)
-        folderId = get_folder_id(drive, "Logs")
+        folderId = get_folder_id(drive, "PDF_Logs")
         json_byte = io.BytesIO(bytes(data_j, encoding='utf8'))
-        name = datetime.datetime.now().strftime("%Y%m%d%H")
+        name = file_items[0]["name"]
+        
+        log_old = find_file(drive, folderId,name)
+        if not log_old: # no file 
+            pass
+        else:
+            remove_file(drive, log_old[0]["id"])
+
         save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")    # convert logs into JSON:
 
         move_file(service=drive, file_id=file_items[0]["id"],folder_id=get_folder_id(drive, "PDFcomplete"))
-        flash ('Table processing complete!')
+        flash ('Table processing complete for one paper!')
         return redirect(url_for('index'))
     
     logger.info('Table %s from paper with DOI: %s is being processed by userID %s' %(table_num, extracted_data[paper]["doi"] , session['user_id']))
@@ -239,9 +246,9 @@ def extract():
     folder_id = get_folder_id(drive, "PDFqueue")
     file_items = get_files(drive, folder_id)
     
-    log_file = []
-    data_file = []
-
+    #log_file = []
+    #data_file = []
+    file_num = 1
     if not file_items:
         return redirect(url_for('list'))
 
@@ -270,15 +277,15 @@ def extract():
         
         files_log["doi"] = doi
 
-        if doi == "DOI not found!": # move to "nodoi" folder"
+        if doi == "DOI not found!": # move to "review" folder"
             file_id = file["id"]
             folder_id = get_folder_id(drive, "PDFreview")
             logger.info('DOI not found in one PDF. Moved to PDFreview folder')
             move_file(service=drive, file_id=file_id,folder_id=folder_id)
             files_log["status"] = "Failed"
         else:
-            state = store_doi(doi)
-            #state = "New"
+            #state = store_doi(doi)
+            state = "New"
             logger.info('Extracting DOI: %s' %doi)
 
             if state == "Old":
@@ -302,7 +309,7 @@ def extract():
                 files_log["status"] = "Ready"
 
                 logger.info('%s tables are extracted from DOI: %s' %(len(tables), doi))
-                print(pages)
+                #print(pages)
                 # get and save pages
                 pages_url = []
                 for page in pages:
@@ -326,31 +333,34 @@ def extract():
                     pages_url.append(P_url)
                 
                 files_data["pages_urls"] = pages_url
-                data_file.append(files_data)
+                #data_file.append(files_data)
 
                 folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file["id"],folder_id=folder_id)
 
 
-        #saveing log and table dat for all files in a batch
-        log_file.append(files_log)
+        #saveing log and table data for all files in a batch
+        #log_file.append(files_log)
         
             
-
+        name = datetime.datetime.now().strftime("%m%d%H")
+        name = name + str(file_num)
+        file_num += 1
     # convert logs into JSON:
-    data = json.dumps(log_file)
-    folderId = get_folder_id(drive, "Logs")
-    json_byte = io.BytesIO(bytes(data, encoding='utf8'))
-    name = datetime.datetime.now().strftime("%Y%m%d%H")
-    save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+        files_log = [files_log]
+        data = json.dumps(files_log)
+        folderId = get_folder_id(drive, "PDF_Logs")
+        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+        
+        save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
     # convert tables into JSON:
-    data = json.dumps(data_file)
-    folderId = get_folder_id(drive, "Json")
-    json_byte = io.BytesIO(bytes(data, encoding='utf8'))
-    name = datetime.datetime.now().strftime("%Y%m%d%H") 
-    save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
-    fh.flush()  
+        files_data = [files_data]
+        data = json.dumps(files_data)
+        folderId = get_folder_id(drive, "Extracted_Tables")
+        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+        save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+        fh.flush()  
 
     return redirect(url_for('list'))
 
@@ -361,26 +371,62 @@ def list():
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
     
      #get files metadata in PDEA folder on google drive
-    file_items = get_files(drive, get_folder_id(drive, "Logs"))
-
+    file_items = get_files(drive, get_folder_id(drive, "PDF_Logs"))
+    logs = [{"name":"","doi":"","status":""}]
     if (file_items == 0) or (not file_items):
-         file_num = 0
-         logs = {"name":"-","doi":"-","status":"-"}
+        return render_template('index.html', files_data=logs)
+         
     else:
+        for file_item in file_items:
+            request = drive.files().get_media(fileId=file_item["id"])
+            fh = io.BytesIO()
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while done is False:
+                    status, done = downloader.next_chunk()
 
-        request = drive.files().get_media(fileId=file_items[0]["id"])
-        fh = io.BytesIO()
-        downloader = MediaIoBaseDownload(fh, request)
-        done = False
-        while done is False:
-                status, done = downloader.next_chunk()
+            fh.seek(0)
+            log = json.load(fh)
+            #print(log)
+            logs += log
+            fh.flush()
 
-        fh.seek(0)
-        logs = json.load(fh)  
-        file_num = len(logs)
         fh.flush()
+        #print(logs)
 
-    return render_template('index.html', files_data=logs, file_numbers = file_num)
+        return render_template('index.html', files_data=logs)
+
+#------------------------------------------------------------------------------------------------
+@app.route('/log_rm_Failed')
+def log_rm_Failed():
+
+    drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
+    
+     #get files metadata in PDEA folder on google drive
+    file_items = get_files(drive, get_folder_id(drive, "PDF_Logs"))
+    
+    if (file_items == 0) or (not file_items):
+        return redirect(url_for('list'))
+         
+    else:
+        for file_item in file_items:
+            request = drive.files().get_media(fileId=file_item["id"])
+            fh = io.BytesIO()
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while done is False:
+                    status, done = downloader.next_chunk()
+
+            fh.seek(0)
+            log = json.load(fh)
+            #print(log)
+            if (log[0]["status"] != "Ready"):
+                folder_id = get_folder_id(drive, "Archive-Json-Logs")
+                move_file(service=drive, file_id=file_item["id"],folder_id=folder_id)
+
+            fh.flush()
+
+        return redirect(url_for('list'))
     
 #------------------------------------------------------------------------------------------------
 @app.route('/post_json', methods = ['POST'])

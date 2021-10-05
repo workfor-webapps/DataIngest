@@ -40,9 +40,11 @@
                    <h4> <div style="text-align: center;">Extraction summary</div> </h4> 
 
                 </div>
-                <div class="col-1">
-                    <a style="text-align: right;" class="btn btn-link btn-sm my-2 my-sm-0" onclick="loader()" href="/extract">refresh</a>
+                <div class="col-12">
+                    <a style="text-align: right;" class="btn btn-link btn-sm my-2 my-sm-0" onclick="loader()" href="/extract">Extract New tables</a>
+                    <a style="text-align: right;" class="btn btn-link btn-sm my-2 my-sm-0" href="/log_rm_Failed">Remove Processed logs</a>
                 </div>
+
             </div>
             <br>
 
@@ -52,18 +54,20 @@
                     <th style="font-size: medium; color: firebrick;">File name</th>
                     <th style="font-size: medium; color: firebrick;">DOI</th>
                     <th style="font-size: medium; color: firebrick;">Status</th>
+                    <!-- <th style="font-size: medium; color: firebrick;">Time</th> -->
                   </tr>
                 </thead>
                 <tbody>
-                {% for i in range(file_numbers) %}    
-                    {% if files_data[i]["status"] == "Processed" %} 
+                {% for item in files_data %}    
+                    {% if item["status"] == "Processed" %} 
                      <tr class="success">
                     {%else %}
                     <tr class="info">
                     {% endif %}
-                    <td style="font-size: medium;">{{files_data[i]["name"]}}</td>
-                    <td style="font-size: medium;"> {{files_data[i]["doi"]}}</td>
-                    <td style="font-size: medium;"> {{files_data[i]["status"]}}</td>
+                    <td style="font-size: medium;"> {{item["name"]}}</td>
+                    <td style="font-size: medium;"> {{item["doi"]}}</td>
+                    <td style="font-size: medium;"> {{item["status"]}}</td>
+                    <!-- <td style="font-size: medium;"> {{item["time"]}}</td> -->
                   </tr>      
                 {% endfor %}
                 </tbody>
