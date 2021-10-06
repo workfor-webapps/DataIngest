@@ -286,18 +286,7 @@ def extract_tables(fh):
 
         if table_clean[num].columns[0] is np.nan and table_clean[num].columns[1] is not np.nan and table_clean[num].iloc[2,1] is np.nan:
             table_clean[num] = table_clean[num].rename(columns={table_clean[num].columns[0]:str(table_clean[num].columns[1]).upper()})
-            table_clean[num] = table_clean[num].drop(columns = [str(table_clean[num].columns[1])])
-
-        
-        # for ind in table_clean[num].index:
-        #     for col in table_clean[num].columns:
-        #         try:
-        #             temp = table_clean[num][col].iloc[ind]
-        #             table_clean[num][col].iloc[ind] = float(temp)
-                    
-        #         except:
-        #             print("cannot convert to float in table %d, column %s, index %d", num, col,ind)
-        
+            table_clean[num] = table_clean[num].drop(columns = [str(table_clean[num].columns[1])])       
 
         #spliting columns if values sperated by space
         if not table_clean[num].columns.is_unique:
@@ -340,9 +329,7 @@ def extract_tables(fh):
                         if not new_df.columns.is_unique:
                             unique_names = list(uniquify(list(new_df.columns)))
                             new_df.columns = unique_names
-                            
-
-                        #
+            
                         for new_column in new_df.columns:
                             if new_column in list(table_clean[num].columns):
                                 new_column1 = new_column + "_1"

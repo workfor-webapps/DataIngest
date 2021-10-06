@@ -54,7 +54,7 @@ class User:
     def __repr__(self) -> str:
         return f'<user: {self.username}'
 
-#add admin user
+#add users
 users = []
 users.append(User(id=0, username='sys_admin', password='sys_admin'))
 users.append(User(id=1, username='admin', password='admin'))
@@ -107,6 +107,7 @@ def index():
 #------------------------------------------------------------------------------------------------
 @app.route('/authorize')
 def authorize():
+
     # Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES)
     flow.redirect_uri = url_for('oauth2callback', _external=True)
@@ -178,9 +179,8 @@ def PullTable():
     if paper >= len(extracted_data) :
         empty_Images_folder(drive,  extracted_data[0]["doi"] )
         
-        #saving new log file
+        #save new log file
         log_file = []
-
         for data_f in extracted_data:
             files_data = dict.fromkeys(['name', 'doi', 'status'])
             files_data["doi"] = data_f["doi"]
@@ -220,14 +220,13 @@ def PullTable():
     pub_data = pub[paper]
     max_tables = len(extracted_data[paper]["tables"])
 
-    #Reading Theme values from metafinds-_config sheet
+    #Read Theme values from metafinds-_config sheet
     drive = get_service(API_SERVICE_SHEET, API_SHEET_VERSION)
     sheet = drive.spreadsheets()
-
-    #get the column name order
     theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!A2:A20", majorDimension="COLUMNS").execute()
     theme_values = theme_column.get('values',[])[0]
 
+    #Read Concept values from metafinds-_config sheet
     con_theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!B2:B20", majorDimension="COLUMNS").execute()
     con_theme_values = con_theme_column.get('values',[])[0]
      
@@ -241,7 +240,7 @@ def extract():
  
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
-    #get files metadata in PDEA folder on google drive
+    #get files in PDFqueue folder on google drive
     folder_id = get_folder_id(drive, "PDFqueue")
     file_items = get_files(drive, folder_id)
     
@@ -252,13 +251,9 @@ def extract():
     for file in file_items:
         
         files_log = dict.fromkeys(['name', 'doi', 'status'])
-        
-        
-
         files_log["name"] = file["name"]     
 
         request = drive.files().get_media(fileId=file["id"])
-
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -269,9 +264,7 @@ def extract():
         fh.seek(0)
         doi = get_doi(fh)
 
-        
         files_log["doi"] = doi
-
         if doi == "DOI not found!": # move to "review" folder"
             file_id = file["id"]
             folder_id = get_folder_id(drive, "PDFreview")
@@ -328,8 +321,6 @@ def extract():
                     pages_url.append(P_url)
                 
                 files_data["pages_urls"] = pages_url
-                #data_file.append(files_data)
-
                 folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file["id"],folder_id=folder_id)     
             
@@ -390,7 +381,6 @@ def log_rm_Failed():
 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
     
-     #get files metadata in PDEA folder on google drive
     file_items = get_files(drive, get_folder_id(drive, "PDF_Logs"))
     
     if (file_items == 0) or (not file_items):
@@ -513,7 +503,8 @@ def ignore_json():
 #------------------------------------------------------------------------------------------------
 @app.route('/cron' , methods = ['GET'])
 def cron():
- 
+
+    # This endpoint is only for scheduled jobs to extract tables 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
     #get files metadata in PDEA folder on google drive
@@ -522,7 +513,7 @@ def cron():
     
     file_num = 1
     if not file_items:
-        return 200
+        return "success", 200
 
     for file in file_items:
         
@@ -629,8 +620,7 @@ def cron():
             save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
         fh.flush()  
 
-    return 200
+    return "success", 200
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0', port=8080)
-    #app.run(debug=True,host='localhost', port=8080)
