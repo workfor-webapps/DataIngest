@@ -283,6 +283,7 @@ def extract():
             logger.info('DOI not found in one PDF. Moved to PDFreview folder')
             move_file(service=drive, file_id=file_id,folder_id=folder_id)
             files_log["status"] = "Failed"
+            files_data_status = False
         else:
             #state = store_doi(doi)
             state = "New"
@@ -293,7 +294,7 @@ def extract():
                 file_id = file["id"]
                 folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file_id,folder_id=folder_id)
-                #files_data["status"] = "Duplicate"
+                files_data_status = False
                 files_log["status"] = "Duplicated"
             else:
                 # here extract and save table data
@@ -305,7 +306,7 @@ def extract():
                 tables, pages = extract_tables(fh)
                 files_data["tables"] = tables
                 files_data["pages"] = pages
-                files_data["status"] = "Ready"
+                files_data_status = True
                 files_log["status"] = "Ready"
 
                 logger.info('%s tables are extracted from DOI: %s' %(len(tables), doi))
@@ -355,11 +356,12 @@ def extract():
         save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
     # convert tables into JSON:
-        files_data = [files_data]
-        data = json.dumps(files_data)
-        folderId = get_folder_id(drive, "Extracted_Tables")
-        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
-        save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+        if files_data_status:
+            files_data = [files_data]
+            data = json.dumps(files_data)
+            folderId = get_folder_id(drive, "Extracted_Tables")
+            json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+            save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
         fh.flush()  
 
     return redirect(url_for('list'))

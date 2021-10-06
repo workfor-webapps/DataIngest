@@ -56,6 +56,7 @@ class User:
 
 #add admin user
 users = []
+users.append(User(id=0, username='sys_admin', password='sys_admin'))
 users.append(User(id=1, username='admin', password='admin'))
 users.append(User(id=2, username='user1', password='user1'))
 
@@ -277,6 +278,7 @@ def extract():
             logger.info('DOI not found in one PDF. Moved to PDFreview folder')
             move_file(service=drive, file_id=file_id,folder_id=folder_id)
             files_log["status"] = "Failed"
+            files_data_status = False
         else:
             state = store_doi(doi)
             #state = "New"
@@ -288,6 +290,7 @@ def extract():
                 folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file_id,folder_id=folder_id)
                 files_log["status"] = "Duplicated"
+                files_data_status = False
             else:
                 # here extract and save table data
                 files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
@@ -298,7 +301,7 @@ def extract():
                 tables, pages = extract_tables(fh)
                 files_data["tables"] = tables
                 files_data["pages"] = pages
-                files_data["status"] = "Ready"
+                files_data_status = True
                 files_log["status"] = "Ready"
 
                 logger.info('%s tables are extracted from DOI: %s' %(len(tables), doi))
@@ -343,11 +346,12 @@ def extract():
         save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
         # convert tables into JSON:
-        files_data = [files_data]
-        data = json.dumps(files_data)
-        folderId = get_folder_id(drive, "Extracted_Tables")
-        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
-        save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+        if files_data_status:
+            files_data = [files_data]
+            data = json.dumps(files_data)
+            folderId = get_folder_id(drive, "Extracted_Tables")
+            json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+            save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
         fh.flush()  
 
     return redirect(url_for('list'))
@@ -506,7 +510,126 @@ def ignore_json():
 
     return "success", 200
 
+#------------------------------------------------------------------------------------------------
+@app.route('/cron' , methods = ['GET'])
+def cron():
+ 
+    drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
+    #get files metadata in PDEA folder on google drive
+    folder_id = get_folder_id(drive, "PDFqueue")
+    file_items = get_files(drive, folder_id)
+    
+    file_num = 1
+    if not file_items:
+        return 200
+
+    for file in file_items:
+        
+        files_log = dict.fromkeys(['name', 'doi', 'status'])
+        
+        
+
+        files_log["name"] = file["name"]     
+
+        request = drive.files().get_media(fileId=file["id"])
+
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        
+        while done is False:
+            status, done = downloader.next_chunk()
+
+        fh.seek(0)
+        doi = get_doi(fh)
+
+        
+        files_log["doi"] = doi
+
+        if doi == "DOI not found!": # move to "review" folder"
+            file_id = file["id"]
+            folder_id = get_folder_id(drive, "PDFreview")
+            logger.info('DOI not found in one PDF. Moved to PDFreview folder')
+            move_file(service=drive, file_id=file_id,folder_id=folder_id)
+            files_log["status"] = "Failed"
+            files_data_status = False
+        else:
+            state = store_doi(doi)
+            #state = "New"
+            logger.info('Extracting DOI: %s' %doi)
+
+            if state == "Old":
+                logger.info('DOI: %s is already in database' %doi)
+                file_id = file["id"]
+                folder_id = get_folder_id(drive, "PDFComplete")
+                move_file(service=drive, file_id=file_id,folder_id=folder_id)
+                files_log["status"] = "Duplicated"
+                files_data_status = False
+            else:
+                # here extract and save table data
+                files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
+                files_data["PDF_url"] = file["webViewLink"]
+                files_data["name"] = file["name"]
+                files_data["doi"] = doi
+
+                tables, pages = extract_tables(fh)
+                files_data["tables"] = tables
+                files_data["pages"] = pages
+                files_data_status = True
+                files_log["status"] = "Ready"
+
+                logger.info('%s tables are extracted from DOI: %s' %(len(tables), doi))
+
+                # get and save pages
+                pages_url = []
+                for page in pages:
+                    pdf_file = PyPDF2.PdfFileReader(fh)
+                    pdf_page = pdf_file.getPage(page[0]-1)
+                    
+                    if page[1]: # if rotated page
+                         pdf_page.rotateClockwise(90)
+
+                    pdf_writer = PyPDF2.PdfFileWriter()
+                    pdf_writer.addPage(pdf_page)
+                    pdf_page_bytes = io.BytesIO()
+                    pdf_writer.write(pdf_page_bytes)
+
+                    #save pdf pages to images folder
+                    folderId = get_folder_id(drive, "PDF_PageImage")
+                    P_id, P_url = save_files(service=drive, data=pdf_page_bytes, 
+                                            name=doi+str(page[0]), folderId= folderId, 
+                                            mimetype = "application/pdf")
+                    pages_url.append(P_url)
+                
+                files_data["pages_urls"] = pages_url
+                #data_file.append(files_data)
+
+                folder_id = get_folder_id(drive, "PDFComplete")
+                move_file(service=drive, file_id=file["id"],folder_id=folder_id)     
+            
+        name = datetime.datetime.now().strftime("%m%d%H")
+        name = name + str(file_num)
+        file_num += 1
+
+        # convert logs into JSON:
+        files_log = [files_log]
+        data = json.dumps(files_log)
+        folderId = get_folder_id(drive, "PDF_Logs")
+        json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+        
+        save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+
+        # convert tables into JSON:
+        if files_data_status:
+            files_data = [files_data]
+            data = json.dumps(files_data)
+            folderId = get_folder_id(drive, "Extracted_Tables")
+            json_byte = io.BytesIO(bytes(data, encoding='utf8'))
+            save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
+        fh.flush()  
+
+    return 200
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0', port=8080)
