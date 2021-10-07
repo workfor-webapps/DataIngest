@@ -223,16 +223,16 @@ def PullTable():
     #Read Theme values from metafinds-_config sheet
     drive = get_service(API_SERVICE_SHEET, API_SHEET_VERSION)
     sheet = drive.spreadsheets()
-    theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!A2:A20", majorDimension="COLUMNS").execute()
-    theme_values = theme_column.get('values',[])[0]
+    ref_con_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="ListFeed!B2:B100", majorDimension="COLUMNS").execute()
+    ref_con_values = ref_con_column.get('values',[])[0]
 
     #Read Concept values from metafinds-_config sheet
-    con_theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!B2:B20", majorDimension="COLUMNS").execute()
+    con_theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="ListFeed!A2:A100", majorDimension="COLUMNS").execute()
     con_theme_values = con_theme_column.get('values',[])[0]
      
     return render_template('indexT.html',table_num = table_num, tables = page, 
                             table_html= rendered_table , pub_data = pub_data, 
-                            max_tables = max_tables, pdf_url = PDFurl, theme_val = theme_values, con_theme_val = con_theme_values)
+                            max_tables = max_tables, pdf_url = PDFurl, ref_con_val = ref_con_values, con_theme_val = con_theme_values)
 
 #------------------------------------------------------------------------------------------------
 @app.route('/extract')
