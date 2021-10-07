@@ -438,14 +438,31 @@ def post_json():
         df["DOI"] = rec_data["DOI"]
         df["TableID"] = str(int(rec_data["Table_num"]) + 1)
         df["Citation"] = get_citation(rec_data["DOI"])
+
+        #list of CONCEPTB representers in Tables 
+        conceptb_list = [
+            "META-ANALYSIS", 
+            "VARIABLE", 
+            "VARIABLES", 
+            "PREDICTOR", 
+            "PREDICTORS", 
+            "ANTECEDENT", 
+            "ANTECEDENTS", 
+            "OUTCOME", 
+            "OUTCOMES", 
+            "CORRELATE", 
+            "CORRELATES" 
+            ]
         
         if "CONCEPTB" in df.columns:
             pass
-        elif "META-ANALYSIS" in df.columns:
-            df["ConceptB"] = df["META-ANALYSIS"]
-            df = df.drop(["META-ANALYSIS"], axis=1)
         else:
             df["ConceptB"] = " "
+            for item in conceptb_list:
+                if item in df.columns:
+                    df["ConceptB"] = df[item]
+                    df = df.drop([item], axis=1)
+                    
 
         df["ThemeB"] = df["CONCEPT THEME"] #?
         df = df.drop(["CONCEPT THEME"], axis=1)

@@ -3,6 +3,20 @@ function html2json() {
   var $table = $("table")
   rows = [],
   header = [];
+  const consb_list = [
+    "CONCEPTB",
+    "META-ANALYSIS", 
+    "VARIABLE", 
+    "VARIABLES", 
+    "PREDICTOR", 
+    "PREDICTORS", 
+    "ANTECEDENT", 
+    "ANTECEDENTS", 
+    "OUTCOME", 
+    "OUTCOMES", 
+    "CORRELATE", 
+    "CORRELATES" 
+    ];
   conceptb_check = 0;
   conceptt_check = 0;
   $table.find("thead th").each(function () {
@@ -18,7 +32,8 @@ function html2json() {
               if (value) {
 
                 if (typeof value === 'string' || value instanceof String) {
-                  if (value.toUpperCase() == "CONCEPTB" || value.toUpperCase() == "META-ANALYSIS") {
+                  //if (value.toUpperCase() == "CONCEPTB" || value.toUpperCase() == "META-ANALYSIS") {
+                  if (consb_list.includes(value.toUpperCase())) {
                     conceptb_check = 1;
                   };
                   if (value.toUpperCase() == "CONCEPT THEME") {
