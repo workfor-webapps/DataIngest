@@ -76,19 +76,21 @@ def get_doi(pdf_file):
 
     pages = [0,1] # just the first and second pages
     text = high_level.extract_text(pdf_file, "", pages)
-    doi_re = re.compile("/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\>\"\<)])+")
-    m = doi_re.search(text)
+    doi_re = r"/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i|10.(\d)+/([^(\s\>\"\<)])+"
+    matches = re.finditer(doi_re, text)
+    match_list = []
+    for matchNum, match in enumerate(matches, start=1):
+        match_list.append(match.group())
    
-    if m is None:
-        doi="DOI not found!"
-    else:
-        m = m.group(0)
-        #check if doi is valide
-        data = PubData(m)
+    if len(match_list) >= 1:
+        match0 = match_list[0]
+        data = PubData(match0)
         if data.status:
-            doi = m
+            doi = match0
         else:
-            doi="DOI not found!"
+            doi="DOI not found in Crossref!"
+    else:
+        doi="DOI not found in text!"
  
     return doi
 

@@ -265,7 +265,7 @@ def extract():
         doi = get_doi(fh)
 
         files_log["doi"] = doi
-        if doi == "DOI not found!": # move to "review" folder"
+        if "DOI not found" in doi: # move to "review" folder"
             file_id = file["id"]
             folder_id = get_folder_id(drive, "PDFreview")
             logger.info('DOI not found in one PDF. Moved to PDFreview folder')
