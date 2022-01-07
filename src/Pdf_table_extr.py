@@ -11,6 +11,15 @@ import numpy as np
 import re
 import crossref_commons.retrieval
 from pdfminer import high_level
+import logging
+
+handler = logging.StreamHandler()
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 def excel_init():
     
@@ -146,24 +155,35 @@ class PubData:
         try:
             self.data = crossref_commons.retrieval.get_publication_as_json(doi)
         except: #DOI could not be resulved
-            print("DOI does not exist in crossref database")
+            logger.info("DOI:{} does not exist in crossref database".format(doi))
             self.status = False
         
         if self.status:
             self.title = self.data["title"][0]
-            Authors = [[x["given"], x["family"]] for x in self.data['author']]
-            Author_str = ""
-            for i in range(len(Authors)):
-                for j in range(2):
-                    Author_str += Authors[i][j] 
-                Author_str += ", "
-            self.authors = Author_str
-            self.jur = self.data['short-container-title'][0]
+            try:
+                Authors = [[x["given"], x["family"]] for x in self.data['author']]
+                Author_str = ""
+                for i in range(len(Authors)):
+                    for j in range(2):
+                        Author_str += Authors[i][j] 
+                    Author_str += ", "
+                self.authors = Author_str
+            
+            except Exception as e:
+                logger.warning(e)
+                self.authors = "Authors not found!"
+            
+            try:
+                self.jur = self.data['short-container-title'][0]
+            except Exception as e:
+                logger.warning(e)
+                self.jur = "journal not found!"
+            
             try:
                 self.pub_year = self.data["published-online"]["date-parts"][0][0]
-            except:
-                self.pub_year = "year not found"
-
+            except Exception as e:
+                logger.warning(e)
+                self.pub_year = "year not found!"
 
         
 #---------------------------------------------------------------------------------------

@@ -243,7 +243,7 @@ def extract():
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
     #get files metadata in PDEA folder on google drive
-    folder_id = get_folder_id(drive, "PDFqueue")
+    folder_id = get_folder_id(drive, "New")
     file_items = get_files(drive, folder_id)
     
     #log_file = []
