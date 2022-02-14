@@ -250,6 +250,7 @@ def extract():
     #data_file = []
     file_num = 1
     if not file_items:
+        logger.info('no file found')
         return redirect(url_for('list'))
 
 
@@ -258,7 +259,7 @@ def extract():
         
         files_log = dict.fromkeys(['name', 'doi', 'status'])
         
-        
+        logger.info('processing {}'.format(file["name"]))
 
         files_log["name"] = file["name"]     
 
