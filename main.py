@@ -248,6 +248,9 @@ def extract():
     if not file_items:
         return redirect(url_for('list'))
 
+    #get trained model
+    model = get_model()
+
     for file in file_items:
         
         files_log = dict.fromkeys(['name', 'doi', 'status'])
@@ -291,7 +294,7 @@ def extract():
                 files_data["name"] = file["name"]
                 files_data["doi"] = doi
 
-                tables, pages = extract_tables(fh)
+                tables, pages = extract_tables(fh, model)
                 files_data["tables"] = tables
                 files_data["pages"] = pages
                 files_data_status = True
@@ -492,17 +495,24 @@ def post_json():
 
         new_sheet_row = sheet_row + append_list
 
-        #extend the new column values
-        body = dict(majorDimension='ROWS', values = [new_sheet_row])
-        response1 = sheet.values().update(
-            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AK1",
-            body=body).execute()
-
-
-        body = dict(majorDimension='ROWS', values = df.values.tolist())
-        response = sheet.values().append(
-            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A2",
-            body=body).execute()
+        try:
+            #extend the new column values
+            body = dict(majorDimension='ROWS', values = [new_sheet_row])
+            response1 = sheet.values().update(
+                valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AK1",
+                body=body).execute()
+        except:
+            flash ('ERROR: Table could NOT be saved in Spreadsheet. Googlesheet could not be extended!')
+            logger.error("Table could NOT be saved in Spreadsheet. Googlesheet could not be extended!")
+        
+        try:
+            body = dict(majorDimension='ROWS', values = df.values.tolist())
+            response = sheet.values().append(
+                valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A2",
+                body=body).execute()
+            flash ('Table successfully saved in the Spreadsheet.')
+        except:
+            flash ('ERROR: Table could NOT be saved in Spreadsheet.')
         
         logger.info("Table %s from DOI: %s is added to the spreadsheet by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
 
@@ -514,7 +524,7 @@ def ignore_json():
 
         rec_data = request.form
         logger.info("Table %s from DOI: %s is ignored by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
-
+        flash ("Table data will not be added to the Spreadsheet")
     return "success", 200
 
 #------------------------------------------------------------------------------------------------

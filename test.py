@@ -227,7 +227,10 @@ def PullTable():
 
     #get the column name order
     theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!A2:A20", majorDimension="COLUMNS").execute()
-    theme_values = theme_column.get('values',[])[0]
+    try:
+        theme_values = theme_column.get('values',[])[0]
+    except:
+        theme_values = [""]
 
     con_theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!B2:B20", majorDimension="COLUMNS").execute()
     con_theme_values = con_theme_column.get('values',[])[0]
@@ -253,7 +256,8 @@ def extract():
         logger.info('no file found')
         return redirect(url_for('list'))
 
-
+    #get trained model
+    model = get_model()
 
     for file in file_items:
         
@@ -304,7 +308,8 @@ def extract():
                 files_data["name"] = file["name"]
                 files_data["doi"] = doi
 
-                tables, pages = extract_tables(fh)
+
+                tables, pages = extract_tables(fh,model)
                 files_data["tables"] = tables
                 files_data["pages"] = pages
                 files_data_status = True
@@ -503,22 +508,30 @@ def post_json():
         new_sheet_row = sheet_row + append_list
 
         #extend the new column values
-        body1 = dict(majorDimension='ROWS', values = [new_sheet_row])
-        response1 = sheet.values().update(
-            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AK1",
-            body=body1).execute()
+        try:
+            body1 = dict(majorDimension='ROWS', values = [new_sheet_row])
+            response1 = sheet.values().update(
+                valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AL1",
+                body=body1).execute()
+        except:
 
-        print("Response1 =", response1)
+            flash ('ERROR: Table could NOT be saved in Spreadsheet. Please check if the spreadsheet is out of range')
+        #print("Response1 =", response1)
 
-        print(df.values.tolist())
+        #print(df.values.tolist())
         
         #df.T.reset_index().T.values.tolist()
-        body = dict(majorDimension='ROWS', values = df.values.tolist())
-        response = sheet.values().append(
-            valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A2",
-            body=body).execute()
+        try:
+            body = dict(majorDimension='ROWS', values = df.values.tolist())
+            response = sheet.values().append(
+                valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A2",
+                body=body).execute()
+            
+            flash ('Table successfully saved in the Spreadsheet.')
+        except:
+            flash ('ERROR: Table could NOT be saved in Spreadsheet. Please check if the spreadsheet is out of range')
 
-        print("Response =", response)
+        #print("Response =", response)
         
         logger.info("Table %s from DOI: %s is added to the spreadsheet by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
 
@@ -530,7 +543,7 @@ def ignore_json():
 
         rec_data = request.form
         logger.info("Table %s from DOI: %s is ignored by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
-
+        flash ("Table data will not be added to the Spreadsheet")
     return "success", 200
 
 
