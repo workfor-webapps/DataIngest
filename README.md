@@ -19,26 +19,28 @@ The folowing folders should be present in your [developer@workfor.com.au] google
 
 
 ## 1- Get the client_secret file
-a. Login to google [cloud console](https://console.cloud.google.com/)  
-b. At the top left corner click *[select a project]* and select **dataingest** 
-c. From the top left Navigation bar, select *[APIs and Services]*
-d. Click Credentials from the left side menu
-e. Download the **OAuth 2.0 Client IDs** as a Json file and rename it to **"client_secret.json"**
-f. Copy this file to the same directory as the Dockerfile
+- a. Login to google [cloud console](https://console.cloud.google.com/)  
+- b. At the top left corner click *[select a project]* and select **dataingest** 
+- c. From the top left Navigation bar, select *[APIs and Services]*
+- d. Click Credentials from the left side menu
+- e. Download the **OAuth 2.0 Client IDs** as a Json file and rename it to **"client_secret.json"**
+- f. Copy this file to the same directory as the Dockerfile
 
 ## 2- Docker build
 a. In the main directory run: ``` docker build -t pdea[:tag] . ```
 
 ## 3- Docker run
-a. If the image is sucessfully built in the previouse step run ``` docker run -d --name dataingest -e PORT=8080 -p 8080:8080 pdea[:tag] ```
-b. You can check the logs of the running docker container by running: ``` docker logs -f --details dataingest```
+- a. If the image is sucessfully built in the previouse step run ``` docker run -d --name dataingest -e PORT=8080 -p 8080:8080 pdea[:tag] ```
+- b. You can check the logs of the running docker container by running: ``` docker logs -f --details dataingest```
+![log](https://user-images.githubusercontent.com/82791736/159834912-20fe3d03-4035-4c61-9886-ecd742d1a4d7.JPG)
+
 
 ## 4- Open the application
 a. the application by default will be served an http://localhost:8080/
 
 ## 5- Stopping and removing the container
-a. Run ```docker stop dataingest```
-b. Run ```docker rm dataingest```
+- a. Run ```docker stop dataingest```
+- b. Run ```docker rm dataingest```
 
 Note 1: if at any point you get Credentials error please go to: http://localhost:8080/authorize
 and follow the steps 
