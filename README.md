@@ -32,6 +32,8 @@ a. In the main directory run: ``` docker build -t pdea[:tag] . ```
 ## 3- Docker run
 - a. If the image is sucessfully built in the previouse step run ``` docker run -d --name dataingest -e PORT=8080 -p 8080:8080 pdea[:tag] ```
 - b. You can check the logs of the running docker container by running: ``` docker logs -f --details dataingest```
+you should see something like this...
+
 ![log](https://user-images.githubusercontent.com/82791736/159834912-20fe3d03-4035-4c61-9886-ecd742d1a4d7.JPG)
 
 
