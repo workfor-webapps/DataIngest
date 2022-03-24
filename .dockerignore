@@ -12,7 +12,11 @@ temp.pdf
 table.csv
 table.xlsx
 test/*
-client_secret.*
+#client_secret.*
 Function_for_foad_updated (1).ipynb
+test.__pycache__
+docs/*
 env_for_foad.txt
-static/model_pickle
+README*
+requirements_copy.txt
+env.yml

@@ -1,6 +1,7 @@
 runtime: custom
 env: flex
-##entrypoint: gunicorn -b :$PORT main:app
+
+instance_class: F4_1G
 
 handlers:
 - url: /.*
@@ -11,6 +12,21 @@ handlers:
 automatic_scaling:
   min_num_instances: 2
   max_num_instances: 2
+  cool_down_period_sec: 180
   cpu_utilization:
-    target_utilization: 0.8
+    target_utilization: 0.85
 
+
+liveness_check:
+  initial_delay_sec: '300'
+  check_interval_sec: '30'
+  timeout_sec: '4'
+  failure_threshold: 4
+  success_threshold: 2
+
+readiness_check:
+  check_interval_sec: '15'
+  timeout_sec: '5'
+  failure_threshold: 2
+  success_threshold: 2
+  app_start_timeout_sec: '300'

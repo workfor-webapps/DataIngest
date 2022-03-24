@@ -1,4 +1,4 @@
 cron:
-- description: "Hourly extraction job"
-  url: /cron
-  schedule: every 2 hours
+##- description: "Hourly extraction job"
+##  url: /cron
+##  schedule: every 2 hours

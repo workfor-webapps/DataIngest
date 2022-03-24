@@ -1,7 +1,7 @@
 """Main python file for flask application. This app uses google drive api to read and write data from
     a personal google account (needs to be changed to server maybe?). 
 """
-from src.drive_functions import *
+from src.drive_functions_local import *
 from src.Pdf_table_extr import *
 from flask import Flask, render_template, request, redirect, g, flash, url_for, session, render_template_string
 import os, sys, io, json, re
@@ -13,6 +13,8 @@ import pandas as pd
 import google_auth_oauthlib.flow
 #import googleapiclient.discovery
 from googleapiclient.http import MediaIoBaseDownload
+import pickle
+import layoutparser as lp
 #import google.cloud.logging
 
 # Instantiates a client
@@ -33,7 +35,7 @@ API_SERVICE_DRIVE = 'drive'
 API_SERVICE_SHEET = 'sheets'
 API_DRIVE_VERSION = 'v3'
 API_SHEET_VERSION = 'v4'
-SPREADSHEETID = "19SeO8AtF4g5zo-2A5TnZgH3-Y9u-Vo7lz9GwKAFuaMY"
+SPREADSHEETID = "1GP6dnjiCl6TLpUGEVNzxXcz6vmsjpSzdiFBqiUs5BOg"
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 class User:
@@ -54,8 +56,9 @@ class User:
     def __repr__(self) -> str:
         return f'<user: {self.username}'
 
-#add admin user
+#add users
 users = []
+users.append(User(id=0, username='sys_admin', password='sys_admin'))
 users.append(User(id=1, username='admin', password='admin'))
 users.append(User(id=2, username='user1', password='user1'))
 
@@ -72,7 +75,7 @@ def before_request():
         g.user = user
     
 #------------------------------------------------------------------------------------------------
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST']) 
 def login():
     if request.method == 'POST':
         session.pop('user_id', None)
@@ -97,8 +100,8 @@ def index():
     if not g.user:
         return redirect(url_for('login'))
     
-    if 'credentials' not in session:
-        return redirect('authorize')
+    #if 'credentials' not in session:
+    #    return redirect('authorize')
 
     #else:
     return redirect(url_for('list'))  
@@ -106,6 +109,7 @@ def index():
 #------------------------------------------------------------------------------------------------
 @app.route('/authorize')
 def authorize():
+
     # Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES)
     flow.redirect_uri = url_for('oauth2callback', _external=True)
@@ -165,7 +169,6 @@ def PullTable():
     
     fh.seek(0)
     extracted_data = json.load(fh)
-    
 
     pub = []
     for data in extracted_data:
@@ -178,16 +181,14 @@ def PullTable():
     if paper >= len(extracted_data) :
         empty_Images_folder(drive,  extracted_data[0]["doi"] )
         
-        #saving new log file
+        #save new log file
         log_file = []
-
         for data_f in extracted_data:
             files_data = dict.fromkeys(['name', 'doi', 'status'])
             files_data["doi"] = data_f["doi"]
             files_data["name"] = data_f["name"]
             files_data["status"] = "Processed"
             log_file.append(files_data)
-            #print(log_file)
         
         # convert logs into JSON:
         data_j = json.dumps(log_file)
@@ -221,23 +222,19 @@ def PullTable():
     pub_data = pub[paper]
     max_tables = len(extracted_data[paper]["tables"])
 
-    #Reading Theme values from metafinds-_config sheet
+    #Read Theme values from metafinds-_config sheet
     drive = get_service(API_SERVICE_SHEET, API_SHEET_VERSION)
     sheet = drive.spreadsheets()
+    ref_con_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="ListFeed!B2:B100", majorDimension="COLUMNS").execute()
+    ref_con_values = ref_con_column.get('values',[])[0]
 
-    #get the column name order
-    theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!A2:A20", majorDimension="COLUMNS").execute()
-    try:
-        theme_values = theme_column.get('values',[])[0]
-    except:
-        theme_values = [""]
-
-    con_theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="_config!B2:B20", majorDimension="COLUMNS").execute()
+    #Read Concept values from metafinds-_config sheet
+    con_theme_column = sheet.values().get(spreadsheetId=SPREADSHEETID, range="ListFeed!A2:A100", majorDimension="COLUMNS").execute()
     con_theme_values = con_theme_column.get('values',[])[0]
      
     return render_template('indexT.html',table_num = table_num, tables = page, 
                             table_html= rendered_table , pub_data = pub_data, 
-                            max_tables = max_tables, pdf_url = PDFurl, theme_val = theme_values, con_theme_val = con_theme_values)
+                            max_tables = max_tables, pdf_url = PDFurl, ref_con_val = ref_con_values, con_theme_val = con_theme_values)
 
 #------------------------------------------------------------------------------------------------
 @app.route('/extract')
@@ -245,25 +242,33 @@ def extract():
  
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
-    #get files metadata in PDEA folder on google drive
+    #get files in PDFqueue folder on google drive
     folder_id = get_folder_id(drive, "PDFqueue")
-    file_items = get_files(drive, folder_id)
+    if folder_id==0:
+        logger.error("No folder found")
+        return redirect(url_for('list')) 
+    else:
+        file_items = get_files(drive, folder_id)
     
-    #log_file = []
-    #data_file = []
     file_num = 1
     if not file_items:
         logger.info('no file found')
         return redirect(url_for('list'))
 
     #get trained model
-    model1 = get_model()
-    logger.info("downloaded model")
-    save_pickle(model1)
-    logger.info("saved model")
-    model = load_pickle()
-    logger.info("loaded model")
+    logger.info('getting trained model ...')
+    model_path = "./static/model_pickle"
+    if os.path.exists(model_path):
+        model = load_pickle()
+    else:
+
+        model1 = get_model()
+        save_pickle(model1)
+        model = load_pickle()
     
+    logger.info("loaded model")
+
+    #logger.info('model downloaded')
 
     for file in file_items:
         
@@ -285,10 +290,9 @@ def extract():
         fh.seek(0)
         doi = get_doi(fh)
 
-        
         files_log["doi"] = doi
-
-        if doi == "DOI not found!": # move to "review" folder"
+        
+        if "DOI not found" in doi: # move to "review" folder"
             file_id = file["id"]
             folder_id = get_folder_id(drive, "PDFreview")
             logger.info('DOI not found in one PDF. Moved to PDFreview folder')
@@ -305,24 +309,33 @@ def extract():
                 file_id = file["id"]
                 folder_id = get_folder_id(drive, "PDFComplete")
                 move_file(service=drive, file_id=file_id,folder_id=folder_id)
-                files_data_status = False
                 files_log["status"] = "Duplicated"
+                files_data_status = False
             else:
                 # here extract and save table data
                 files_data = dict.fromkeys(['name', 'doi', 'pages', 'PDF_url','pages_urls', 'tables'])
                 files_data["PDF_url"] = file["webViewLink"]
                 files_data["name"] = file["name"]
                 files_data["doi"] = doi
+                try:
+                    tables, pages = extract_tables(fh, model)
+                except:
+                    logger.error("an exception accured while processing: {}".format(files_data["name"]))
+                    file_id = file["id"]
+                    folder_id = get_folder_id(drive, "PDFreview")
+            #logger.info('DOI not found in one PDF. Moved to PDFreview folder')
+                    move_file(service=drive, file_id=file_id,folder_id=folder_id)
+                    files_log["status"] = "Failed"
+                    files_data_status = False
+                    continue
 
-
-                tables, pages = extract_tables(fh,model)
                 files_data["tables"] = tables
                 files_data["pages"] = pages
                 files_data_status = True
                 files_log["status"] = "Ready"
 
                 logger.info('%s tables are extracted from DOI: %s' %(len(tables), doi))
-                #print(pages)
+
                 # get and save pages
                 pages_url = []
                 for page in pages:
@@ -342,24 +355,17 @@ def extract():
                     P_id, P_url = save_files(service=drive, data=pdf_page_bytes, 
                                             name=doi+str(page[0]), folderId= folderId, 
                                             mimetype = "application/pdf")
-                    #P_url = re.sub("/view?*", "/preview", P_url) 
                     pages_url.append(P_url)
                 
                 files_data["pages_urls"] = pages_url
-                #data_file.append(files_data)
-
                 folder_id = get_folder_id(drive, "PDFComplete")
-                move_file(service=drive, file_id=file["id"],folder_id=folder_id)
-
-
-        #saveing log and table data for all files in a batch
-        #log_file.append(files_log)
-        
+                move_file(service=drive, file_id=file["id"],folder_id=folder_id)     
             
         name = datetime.datetime.now().strftime("%m%d%H")
         name = name + str(file_num)
         file_num += 1
-    # convert logs into JSON:
+
+        # convert logs into JSON:
         files_log = [files_log]
         data = json.dumps(files_log)
         folderId = get_folder_id(drive, "PDF_Logs")
@@ -367,7 +373,7 @@ def extract():
         
         save_files(service=drive, data=json_byte, name=name, folderId=folderId, mimetype="application/json")
 
-    # convert tables into JSON:
+        # convert tables into JSON:
         if files_data_status:
             files_data = [files_data]
             data = json.dumps(files_data)
@@ -383,8 +389,7 @@ def extract():
 def list():
 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
-    
-     #get files metadata in PDEA folder on google drive
+    #get files metadata in PDEA folder on google drive
     file_items = get_files(drive, get_folder_id(drive, "PDF_Logs"))
     logs = [{"name":"","doi":"","status":""}]
     if (file_items == 0) or (not file_items):
@@ -401,13 +406,10 @@ def list():
 
             fh.seek(0)
             log = json.load(fh)
-            #print(log)
             logs += log
             fh.flush()
 
         fh.flush()
-        #print(logs)
-
         return render_template('index.html', files_data=logs)
 
 #------------------------------------------------------------------------------------------------
@@ -416,7 +418,6 @@ def log_rm_Failed():
 
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
     
-     #get files metadata in PDEA folder on google drive
     file_items = get_files(drive, get_folder_id(drive, "PDF_Logs"))
     
     if (file_items == 0) or (not file_items):
@@ -433,7 +434,6 @@ def log_rm_Failed():
 
             fh.seek(0)
             log = json.load(fh)
-            #print(log)
             if (log[0]["status"] != "Ready"):
                 folder_id = get_folder_id(drive, "Archive-Json-Logs")
                 move_file(service=drive, file_id=file_item["id"],folder_id=folder_id)
@@ -455,7 +455,6 @@ def post_json():
         first_row = sheet.values().get(spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AK1", majorDimension="ROWS").execute()
         sheet_row = first_row.get('values',[])[0]
         
-
         rec_data = request.form
         table = json.loads(rec_data["table"])
 
@@ -476,14 +475,31 @@ def post_json():
         df["DOI"] = rec_data["DOI"]
         df["TableID"] = str(int(rec_data["Table_num"]) + 1)
         df["Citation"] = get_citation(rec_data["DOI"])
+
+        #list of CONCEPTB representers in Tables 
+        conceptb_list = [
+            "META-ANALYSIS", 
+            "VARIABLE", 
+            "VARIABLES", 
+            "PREDICTOR", 
+            "PREDICTORS", 
+            "ANTECEDENT", 
+            "ANTECEDENTS", 
+            "OUTCOME", 
+            "OUTCOMES", 
+            "CORRELATE", 
+            "CORRELATES" 
+            ]
         
         if "CONCEPTB" in df.columns:
             pass
-        elif "META-ANALYSIS" in df.columns:
-            df["ConceptB"] = df["META-ANALYSIS"]
-            df = df.drop(["META-ANALYSIS"], axis=1)
         else:
             df["ConceptB"] = " "
+            for item in conceptb_list:
+                if item in df.columns:
+                    df["ConceptB"] = df[item]
+                    df = df.drop([item], axis=1)
+                    
 
         df["ThemeB"] = df["CONCEPT THEME"] #?
         df = df.drop(["CONCEPT THEME"], axis=1)
@@ -513,31 +529,24 @@ def post_json():
 
         new_sheet_row = sheet_row + append_list
 
-        #extend the new column values
         try:
-            body1 = dict(majorDimension='ROWS', values = [new_sheet_row])
+            #extend the new column values
+            body = dict(majorDimension='ROWS', values = [new_sheet_row])
             response1 = sheet.values().update(
-                valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AL1",
-                body=body1).execute()
+                valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A1:AK1",
+                body=body).execute()
         except:
-
-            flash ('ERROR: Table could NOT be saved in Spreadsheet. Please check if the spreadsheet is out of range')
-        #print("Response1 =", response1)
-
-        #print(df.values.tolist())
+            flash ('ERROR: Table could NOT be saved in Spreadsheet. Googlesheet could not be extended!')
+            logger.error("Table could NOT be saved in Spreadsheet. Googlesheet could not be extended!")
         
-        #df.T.reset_index().T.values.tolist()
         try:
             body = dict(majorDimension='ROWS', values = df.values.tolist())
             response = sheet.values().append(
                 valueInputOption='USER_ENTERED', spreadsheetId=SPREADSHEETID, range="DataIngest!A2",
                 body=body).execute()
-            
             flash ('Table successfully saved in the Spreadsheet.')
         except:
-            flash ('ERROR: Table could NOT be saved in Spreadsheet. Please check if the spreadsheet is out of range')
-
-        #print("Response =", response)
+            flash ('ERROR: Table could NOT be saved in Spreadsheet.')
         
         logger.info("Table %s from DOI: %s is added to the spreadsheet by userID %s" %(rec_data["Table_num"], rec_data["DOI"], session["user_id"] ))
 
@@ -552,7 +561,7 @@ def ignore_json():
         flash ("Table data will not be added to the Spreadsheet")
     return "success", 200
 
-
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True,host='localhost', port=8080)
+    app.run(debug=True,host='0.0.0.0', port=8080)
+    #app.run(port=8080)

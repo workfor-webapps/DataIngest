@@ -13,6 +13,8 @@ import pandas as pd
 import google_auth_oauthlib.flow
 #import googleapiclient.discovery
 from googleapiclient.http import MediaIoBaseDownload
+import pickle
+import layoutparser as lp
 #import google.cloud.logging
 
 # Instantiates a client
@@ -246,17 +248,28 @@ def extract():
     
     file_num = 1
     if not file_items:
+        logger.info('no file found')
         return redirect(url_for('list'))
 
     #get trained model
-    model = get_model()
+    logger.info('getting trained model ...')
+    #model = get_model()
+    #model_pickle = download_model_into_memory()
+    model = load_pickle()
+    logger.info("loaded model")
+
+    #logger.info('model downloaded')
 
     for file in file_items:
         
         files_log = dict.fromkeys(['name', 'doi', 'status'])
+        
+        logger.info('processing {}'.format(file["name"]))
+
         files_log["name"] = file["name"]     
 
         request = drive.files().get_media(fileId=file["id"])
+
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -268,6 +281,7 @@ def extract():
         doi = get_doi(fh)
 
         files_log["doi"] = doi
+        
         if "DOI not found" in doi: # move to "review" folder"
             file_id = file["id"]
             folder_id = get_folder_id(drive, "PDFreview")
@@ -542,6 +556,9 @@ def cron():
     if not file_items:
         return "success", 200
 
+    #get trained model
+    model = get_model()
+
     for file in file_items:
         
         files_log = dict.fromkeys(['name', 'doi', 'status'])
@@ -591,7 +608,7 @@ def cron():
                 files_data["name"] = file["name"]
                 files_data["doi"] = doi
 
-                tables, pages = extract_tables(fh)
+                tables, pages = extract_tables(fh, model)
                 files_data["tables"] = tables
                 files_data["pages"] = pages
                 files_data_status = True
@@ -651,3 +668,4 @@ def cron():
 #------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0', port=8080)
+    #app.run(port=8080)

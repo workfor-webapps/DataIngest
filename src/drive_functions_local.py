@@ -132,7 +132,7 @@ def credentials_to_dict(credentials):
 
 def save_pickle(model):
     import pickle
-    with open('model_pickle', 'wb') as f:
+    with open('./static/model_pickle', 'wb') as f:
         pickle.dump(model, f)
 
 def load_pickle():
@@ -152,8 +152,8 @@ def get_service(API_SERVICE_NAME, API_VERSION):
     :rtype: google service
     """
 
-    credential = get_cred()
-    session['credentials'] = credential
+    #credential = get_cred()
+    #session['credentials'] = credential
 
     if 'credentials' not in session:
         return redirect('authorize')
@@ -163,7 +163,7 @@ def get_service(API_SERVICE_NAME, API_VERSION):
         **session['credentials'])
     
     Dict_cred = credentials_to_dict(credentials)
-    store_cred (Dict_cred)
+    #store_cred (Dict_cred)
     session['credentials'] = Dict_cred
 
     service = googleapiclient.discovery.build(
@@ -217,7 +217,9 @@ def get_folder_id(service, name):
     folderId = service.files().list(q = "mimeType = 'application/vnd.google-apps.folder' and name contains " + "'" + name + "'",
      pageSize=10, fields="nextPageToken, files(id, name)").execute()
     folderIdResult = folderId.get('files', [])
-    if not folderIdResult: return 0
+    if not folderIdResult: 
+        logger.error("No result found for: {}".format(name))
+        return 0
     #we know there is only 1 folder with that name, so we just get the id of the 1st item in the list
     id = folderIdResult[0].get('id')
     return id
