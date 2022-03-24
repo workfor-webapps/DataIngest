@@ -322,8 +322,8 @@ def extract():
                 files_data["doi"] = doi
                 try:
                     tables, pages = extract_tables(fh, model)
-                except:
-                    logger.error("an exception accured while processing: {}".format(files_data["name"]))
+                except Exception as e:
+                    logger.error("The following exception accured while processing: {} \n {}".format(files_data["name"], e))
                     file_id = file["id"]
                     folder_id = get_folder_id(drive, "PDFreview")
             #logger.info('DOI not found in one PDF. Moved to PDFreview folder')
@@ -392,7 +392,7 @@ def extract():
 def list():
     if 'credentials' not in session:
         return redirect('authorize')
-        
+
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
     #get files metadata in PDEA folder on google drive
     file_items = get_files(drive, get_folder_id(drive, "PDF_Logs"))

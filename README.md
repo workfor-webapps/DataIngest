@@ -39,3 +39,10 @@ a. the application by default will be served an http://localhost:8080/
 ## 5- Stopping and removing the container
 a. Run ```docker stop dataingest```
 b. Run ```docker rm dataingest```
+
+Note 1: if at any point you get Credentials error please go to: http://localhost:8080/authorize
+and follow the steps 
+
+Note 2: If you change the code, you need to rebuild the docker image and run the new image
+
+
