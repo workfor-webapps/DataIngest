@@ -151,6 +151,9 @@ def PullTable():
     header = "{% extends 'table_base.html' %}\n{% block body %}\n"
     footer = "\n{% endblock %}"
 
+    if 'credentials' not in session:
+        return redirect('authorize')
+
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
     file_items = get_files(drive, get_folder_id(drive, "Extracted_Tables"))  
 
@@ -239,7 +242,7 @@ def PullTable():
 #------------------------------------------------------------------------------------------------
 @app.route('/extract')
 def extract():
- 
+    
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
 
     #get files in PDFqueue folder on google drive
@@ -387,7 +390,9 @@ def extract():
 #------------------------------------------------------------------------------------------------
 @app.route('/status_update')
 def list():
-
+    if 'credentials' not in session:
+        return redirect('authorize')
+        
     drive = get_service(API_SERVICE_DRIVE, API_DRIVE_VERSION)
     #get files metadata in PDEA folder on google drive
     file_items = get_files(drive, get_folder_id(drive, "PDF_Logs"))
